@@ -1,0 +1,21 @@
+   Saturnine is a Clojure library to assist in developing server applications
+   in a message-passing style.  It is built on top of JBoss Netty, and inherits 
+   a number of features from this framework, including trivial configuration in
+   blocking or non-blocking modes and SSL/TLS support (with starttls).  Here's 
+   a simple REPL server:
+
+     (use 'saturnine)
+
+     (defserver repl-server 1234 :string :print :clj :echo)
+
+     (start repl-server :nonblocking)
+
+   Here's a slighlty more complex sum-calculating server that implements a 
+   custom Handler:
+
+     (defhandler Sum [sum]
+       (upstream [msg] (let [new-sum (+ sum msg)]
+                         (send-down (str \"Sum is \" new-sum \"\\r\\n\"))
+                         (assoc this :sum new-sum))))
+
+     (defserver sum-server 1234 :string :clj (Sum 0))

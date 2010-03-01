@@ -47,7 +47,11 @@ namespace.
   <h1 class="nopad">Table of Contents</h1>
   <div style="margin-left: 1em;" class="toc-section">
     <a href="#toc0">Overview</a>
-    
+    <div style="margin-left: 1em;" class="toc-entry">
+      <a href="#sample/Sum">Sum</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#sample/sum-server">sum-server</a>
+    </div>
     <br />
   </div>
 </div>
@@ -60,11 +64,40 @@ by <span id="author">Unknown</span><br />
   (:require <span id="long-name">sample</span>))
 </pre><pre>
 </pre><h2>Overview</h2>
-<pre id="namespace-docstr">Contains a few sample implementations to illustatre usage of the Saturnine 
+<pre id="namespace-docstr">Contains a few sample implementations to illustrate usage of the Saturnine 
 library</pre>
 <br />
 <h2>Public Variables and Functions</h2>
+<div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="sample/Sum">Sum</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (Sum sum)
+       (Sum sum meta__5784__auto__ extmap__5785__auto__)
+</pre>
+  <pre id="var-docstr">The Sum handler contains the cumulative sum state so far for single 
+connection.  When an upstream message is received, it is added to the sum, 
+written back to the client and then returned, thus updating the state for 
+future calls.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="sample/sum-server">sum-server</h2>
+  <span id="var-type">var</span><br />
+  <pre id="var-usage"></pre>
+  <pre id="var-docstr">Sum is a simple server that reads a stream of newline-delimited Integers and
+responds with the cumulative sum.  It is constructed of 3 handlers:
 
+:string - emits strings at every new line
+:clj    - calls read &amp; eval on each string, making "1" -&gt; 1, for example.
+Sum     - The custom handler contains the cumulative sum state so far for a
+          single connection.  Non-integers that are evalable will throw a
+          ClassCastException to the default handle, while unevalable ones 
+          will display a parse error.</pre>
+  
+</div>
 
 
 </div>

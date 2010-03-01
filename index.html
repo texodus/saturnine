@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <title>Saturnine - Overview</title>
+    <link href="static/favicon.png" rel="icon" />
+    <link href="static/favicon.png" rel="shortcut icon" />
+    <link media="all" type="text/css" href="static/clojure.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/wiki.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/internal.css" rel="stylesheet" />
+    <!-- TODO: are we using these (from clojure.org)? If so, add the files -->
+    <script src="file/view/code_highlighter.js" type="text/javascript"></script>
+    <script src="file/view/clojure.js" type="text/javascript"></script>
+    <style>.menuWrapper{height: 36px;}</style>
+    <!--[if lte IE 6]>
+    <link rel="stylesheet" href="http://www.wikispaces.com/_/2009051601/s/internal_ie.css" type="text/css" />
+    <![endif]-->
+  </head>
+<!--
+This document was auto-generated from the source by the clojure autodoc system.
+To report errors or ask questions about the overall documentation structure, formatting,
+etc., contact Tom Faulhaber (google mail name: tomfaulhaber).
+For errors in the documentation of a particular namespace, contact the author of that
+namespace.
+-->
+  <body>
+    <div id="AllContentContainer">
+      <div id="Header">
+	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
+	<h1><a title="page header title" id="page-header" href="index.html">Saturnine API Documentation</a></h1>
+      </div>
+      <div id="leftcolumn"><div style="text-align: center;"></div>
+<div class="menu">
+  <div class="WikiCustomNav WikiElement wiki">
+    <a class="wiki_link" href="index.html">Overview</a><br />
+    <a class="wiki_link" href="api-index.html">API Index</a><br />
+    <a class="wiki_link" href="#">Namespaces:</a>
+    <ul id="left-sidebar-list">
+      <li><a href="sample-api.html" class="wiki_link">sample</a></li><li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
+    </ul>
+  </div>
+</div>
+</div>
+      <div id="rightcolumn">
+	<div id="Content">
+	  <div class="contentBox"><div class="innerContentBox">
+              <div id="content_view" class="wiki wikiPage">
+                <div id="right-sidebar"><div id="toc">
+  <h1 class="nopad">Table of Contents</h1>
+  <div style="margin-left: 1em;" class="toc-section">
+    <a href="#sample">sample</a>
+    
+    <br />
+  </div><div style="margin-left: 1em;" class="toc-section">
+    <a href="#saturnine">saturnine</a>
+    
+    <br />
+  </div>
+</div>
+</div>
+                <div id="content-tag"><h1 id="toc0">An Overview of the <span id="header-project">Saturnine</span> API</h1>
+<br />
+<div id="project-description">Saturnine is a Clojure library to assist in developing server applications
+   in a message-passing style.  It is built on top of JBoss Netty, and inherits 
+   a number of features from this framework, including trivial configuration in
+   blocking or non-blocking modes and SSL/TLS support (with starttls).  Here's 
+   a simple REPL server:
+<pre id="namespace-docstr">
+     (use 'saturnine)
+
+     (defserver repl-server 1234 :string :print :clj :echo)
+
+     (start repl-server :nonblocking)
+</pre>
+   Here's a slighlty more complex sum-calculating server that implements a 
+   custom Handler:
+<pre id="namespace-docstr">
+     (defhandler Sum [sum]
+       (upstream [msg] (let [new-sum (+ sum msg)]
+                         (send-down (str "Sum is " new-sum "\r\n"))
+                         (assoc this :sum new-sum))))
+
+     (defserver sum-server 1234 :string :clj (Sum 0))
+</pre></div>
+<br />
+<div id="namespace-entry">
+  <br />
+  <hr />
+  <h2 id="sample">sample</h2>
+  by <span id="author">unknown author</span><br />
+  <a href="sample-api.html" id="api-link">Detailed API documentation</a><br />
+  <pre id="namespace-docstr">Contains a few sample implementations to illustatre usage of the Saturnine 
+library</pre>
+  
+  Public variables and functions:
+  <br />
+  
+</div><div id="namespace-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine">saturnine</h2>
+  by <span id="author">unknown author</span><br />
+  <a href="saturnine-api.html" id="api-link">Detailed API documentation</a><br />
+  <pre id="namespace-docstr">This namespace is the public API for Saturnine;  it contains everything
+necessary to build server applications.  This should be the only namespace
+you need to import into your project</pre>
+  
+  Public variables and functions:
+  <span id="var-link"><a href="saturnine-api.html#saturnine/close" id="var-tag">close</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/connection" id="var-tag">connection</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defhandler" id="var-tag">defhandler</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defserver" id="var-tag">defserver</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/ip" id="var-tag">ip</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/open" id="var-tag">open</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-down" id="var-tag">send-down</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-up" id="var-tag">send-up</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/start" id="var-tag">start</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/start-tls" id="var-tag">start-tls</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/stop" id="var-tag">stop</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/write" id="var-tag">write</a> </span><br />
+  
+</div>
+</div>
+              </div>
+            </div>
+          </div>
+	</div>
+	<div id="foot">
+	  <div style="text-align: center;" id="copyright">No copyright info </div>
+	</div>
+      </div>
+      <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />
+      Clojure auto-documentation system by Tom Faulhaber.</div>
+    </div>
+    <!-- /AllContentContainer -->
+  </body>
+
+</html>

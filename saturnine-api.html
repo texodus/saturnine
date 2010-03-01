@@ -1,0 +1,248 @@
+<html>
+  <head>
+    <title>saturnine API reference (Saturnine)</title>
+    <link href="static/favicon.png" rel="icon" />
+    <link href="static/favicon.png" rel="shortcut icon" />
+    <link media="all" type="text/css" href="static/clojure.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/wiki.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/internal.css" rel="stylesheet" />
+    <!-- TODO: are we using these (from clojure.org)? If so, add the files -->
+    <script src="file/view/code_highlighter.js" type="text/javascript"></script>
+    <script src="file/view/clojure.js" type="text/javascript"></script>
+    <style>.menuWrapper{height: 36px;}</style>
+    <!--[if lte IE 6]>
+    <link rel="stylesheet" href="http://www.wikispaces.com/_/2009051601/s/internal_ie.css" type="text/css" />
+    <![endif]-->
+  </head>
+<!--
+This document was auto-generated from the source by the clojure autodoc system.
+To report errors or ask questions about the overall documentation structure, formatting,
+etc., contact Tom Faulhaber (google mail name: tomfaulhaber).
+For errors in the documentation of a particular namespace, contact the author of that
+namespace.
+-->
+  <body>
+    <div id="AllContentContainer">
+      <div id="Header">
+	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
+	<h1><a title="page header title" id="page-header" href="index.html">Saturnine API Documentation</a></h1>
+      </div>
+      <div id="leftcolumn"><div style="text-align: center;"></div>
+<div class="menu">
+  <div class="WikiCustomNav WikiElement wiki">
+    <a class="wiki_link" href="index.html">Overview</a><br />
+    <a class="wiki_link" href="api-index.html">API Index</a><br />
+    <a class="wiki_link" href="#">Namespaces:</a>
+    <ul id="left-sidebar-list">
+      <li><a href="sample-api.html" class="wiki_link">sample</a></li><li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
+    </ul>
+  </div>
+</div>
+</div>
+      <div id="rightcolumn">
+	<div id="Content">
+	  <div class="contentBox"><div class="innerContentBox">
+              <div id="content_view" class="wiki wikiPage">
+                <div id="right-sidebar"><div id="toc">
+  <h1 class="nopad">Table of Contents</h1>
+  <div style="margin-left: 1em;" class="toc-section">
+    <a href="#toc0">Overview</a>
+    <div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/close">close</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/connection">connection</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/defhandler">defhandler</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/defserver">defserver</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/ip">ip</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/open">open</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/send-down">send-down</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/send-up">send-up</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/start">start</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/start-tls">start-tls</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/stop">stop</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/write">write</a>
+    </div>
+    <br />
+  </div>
+</div>
+</div>
+                <div id="content-tag"><h1 id="overview">API for <span id="namespace-name">saturnine</span></h1>
+by <span id="author">Unknown</span><br />
+<br />Usage:
+<pre>
+(ns your-namespace
+  (:require <span id="long-name">saturnine</span>))
+</pre><pre>
+</pre><h2>Overview</h2>
+<pre id="namespace-docstr">This namespace is the public API for Saturnine;  it contains everything
+necessary to build server applications.  This should be the only namespace
+you need to import into your project</pre>
+<br />
+<h2>Public Variables and Functions</h2>
+<div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/close">close</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (close)
+       (close {channel :channel})
+</pre>
+  <pre id="var-docstr">Closes the connection and dispatch a :disconnect to the handlers.  Closes 
+the thread-bound *connection* if no connection argument is supplied</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/connection">connection</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (connection)
+</pre>
+  <pre id="var-docstr">Gets the current conenction object for operation form other threads</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/defhandler">defhandler</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (defhandler name args &amp; funs)
+</pre>
+  <pre id="var-docstr">This macro allows the user to define Handlers for a server.  Each handler
+represents the intermediate state of a single connection, and is structured
+like a datatype that implements a single protocol (Handler), though each 
+function implementation is optional and will be substituted for the default 
+implementation if missing.  Each function defined should return the new state
+of the connection (returning nil leaves the state unmodified), and optionally 
+pass new messages to the other handlers in the pipeline (via send-up or 
+send-down, which are automatically called for default implementations).</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/defserver">defserver</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (defserver name port &amp; handlers)
+</pre>
+  <pre id="var-docstr">This macro allows the user to define a server instance.  You must call 
+(start name) to start the server once it's been defined.  
+
+In addition to Handlers you define yourself, defserver accepts a few built in
+Handlers:
+
+  :ssl    - SSL
+  :string - translates to String (flushes on newline)
+  :clj    - translates Strings to Clojure data structures with read-string
+  :echo   - echos upstream messages downstream
+  :print  - logs messages via clojure.contrib.logging</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/ip">ip</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (ip)
+       (ip {channel :channel})
+</pre>
+  <pre id="var-docstr">Gets a Connection's IP.  Uses thread-bound *connection* if none supplied</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/open">open</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (open host port)
+       (open {client :client} host port)
+</pre>
+  <pre id="var-docstr">Open a new Connection to a remote host and port.  Uses settings from thread-
+bound *connection* if none is supplied</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/send-down">send-down</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (send-down msg)
+</pre>
+  <pre id="var-docstr">Sends a message downstream (dispatches :downstream).  Requires a thread-bound
+*connection*</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/send-up">send-up</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (send-up msg)
+</pre>
+  <pre id="var-docstr">Sends a message upstream (dispatches :upstream).  Requires a thread-bound 
+*connection*</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/start">start</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (start server)
+       (start server blocking)
+       (start server keystore keypassword certificatepassword)
+       (start server blocking keystore keypassword certificatepassword)
+</pre>
+  <pre id="var-docstr">Initialize all server, client, ssl &amp; logging functionality</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/start-tls">start-tls</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (start-tls)
+</pre>
+  <pre id="var-docstr">Convert the connection to TLS in STARTTLS mode (ignoring the first message).
+Requires a thread-bound *connection*</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/stop">stop</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (stop {server :server, client :client})
+</pre>
+  <pre id="var-docstr">Stop all server &amp; client listeners</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/write">write</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (write msg)
+       (write {channel :channel} msg)
+</pre>
+  <pre id="var-docstr">Write a message to the connection (dispatches :downstream).  Writes to the 
+thread-bound *connection* if none is supplied</pre>
+  
+</div>
+
+
+</div>
+              </div>
+            </div>
+          </div>
+	</div>
+	<div id="foot">
+	  <div style="text-align: center;" id="copyright">No copyright info </div>
+	</div>
+      </div>
+      <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />
+      Clojure auto-documentation system by Tom Faulhaber.</div>
+    </div>
+    <!-- /AllContentContainer -->
+  </body>
+
+</html>

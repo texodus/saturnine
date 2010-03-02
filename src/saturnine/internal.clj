@@ -1,8 +1,10 @@
-(ns saturnine.netty  
+(ns saturnine.internal  
   (:gen-class) 
   (:import [java.net InetAddress InetSocketAddress URL]
            [java.util.concurrent Executors]
-	   [javax.net.ssl SSLContext]
+           [java.security KeyStore Security]
+           [java.security.cert X509Certificate]
+           [javax.net.ssl SSLContext KeyManagerFactory TrustManager SSLEngine]
            [org.jboss.netty.bootstrap ServerBootstrap ClientBootstrap]
            [org.jboss.netty.logging InternalLoggerFactory Log4JLoggerFactory JdkLoggerFactory CommonsLoggerFactory]
            [org.jboss.netty.channel Channel SimpleChannelHandler ChannelFutureListener ChannelHandlerContext ChannelStateEvent ChildChannelStateEvent ExceptionEvent UpstreamMessageEvent DownstreamMessageEvent MessageEvent]
@@ -13,7 +15,7 @@
   (:require [clojure.contrib.str-utils2 :as string]
             [clojure.contrib.logging :as logging])
   (:use [clojure.contrib.logging :only [log]]
-	[saturnine.ssl]))
+	[saturnine.xml]))
 
 
 
@@ -33,6 +35,33 @@
   (connect    [x]     "Handle a new connection")
   (disconnect [x]     "Handle a disconnect")
   (error      [x msg] "Handle an error"))
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;; SSL
+
+(defn #^SSLContext get-ssl-context
+  [path key-pass cert-pass]
+  (doto (SSLContext/getInstance "TLS")
+    (.init (.getKeyManagers (doto (KeyManagerFactory/getInstance "SunX509")
+                              (.init (doto (KeyStore/getInstance "JKS")
+                                       (.load (ClassLoader/getSystemResourceAsStream path) 
+                                              (.toCharArray key-pass)))
+                                     (.toCharArray cert-pass))))
+           (into-array [(proxy [TrustManager] []
+                          (getAcceptedIssuers [] (make-array X509Certificate 0))
+                          (checkClientTrusted [x y] nil)
+                          (checkServerTrusted [x y] nil))])
+           nil)))
+
+(defn get-ssl-engine 
+  [#^SSLContext ssl-context #^boolean client-mode]
+  (doto (.createSSLEngine ssl-context)
+    (.setUseClientMode client-mode)))
 
 
 
@@ -82,7 +111,6 @@
     (binding [*connection* (Connection ctx (.getChannel event) event server)]
       (do (let [new-state (error (@handlers ip) (bean (.getCause event)))]
             (if new-state (dosync (alter handlers assoc ip new-state))))))))
-  
 
 (defn get-channel-handler
   [#^::Handler master #^::Server server] 
@@ -93,6 +121,22 @@
       (channelConnected    [ctx event] (channelConnected master server ctx event states))
       (channelDisconnected [ctx event] (channelDisconnected server ctx event states))
       (exceptionCaught     [ctx event] (exception server ctx event states)))))
+
+(defn send-up-internal
+  [msg]
+  (let [{channel :channel context :context} *connection*
+        ip (.getRemoteAddress channel)]
+    (.sendUpstream context (UpstreamMessageEvent. channel msg ip))))
+
+(defn send-down-internal
+  [msg]
+  (let [{channel :channel context :context event :event} *connection*] 
+    (.sendDownstream context (DownstreamMessageEvent. channel 
+						      (.getFuture event) 
+						      msg 
+						      (.getRemoteAddress channel)))))
+
+
 
 
 
@@ -107,7 +151,6 @@
        (writeRequested [ctx event] (.sendDownstream ctx event))
        (messageReceived  [ctx event] (.sendDownstream ctx event))
        (connect [ctx event] nil)
-;       (exceptionCaught [ctx event] (log :error (str (.. event getChannel getRemoteAddress) " " (.. event getCause getMessage))))
        (disconnect [ctx event] nil)))
 
 
@@ -128,7 +171,6 @@
                                                                               (str (print-str (.getMessage event)) "\r\n")
                                                                               (.getRemoteAddress (.getChannel event))))))
        (connect [ctx event] nil)
-  ;     (exceptionCaught [ctx event] (log :error (str (.. event getChannel getRemoteAddress) " " (.. event getCause getMessage))))
        (disconnect [ctx event] nil)))
 
 (def print-handler
@@ -140,8 +182,20 @@
                                           (log :info (str (.. event getChannel getRemoteAddress) " <-- " line)))
                                         (.sendDownstream ctx event)))
        (connect [ctx event] nil)
-   ;    (exceptionCaught [ctx event] (log :error (str (.. event getChannel getRemoteAddress) " " (.. event getCause getMessage))))
        (disconnect [ctx event] nil)))
+
+;; (deftype XML [] 
+;;   Handler (connect    []    (xml/Element nil nil nil []))
+;;           (disconnect []    nil)
+;; 	  (downstream [msg] (send-down state msg))
+;; 	  (upstream   [msg] (loop [tokens (rest msg) 
+;;                                    {next-state :state messages :messages} (xml/parse state (first msg))]
+;;                               (doseq [msg messages] (send-up state msg))
+;;                               (if (not (empty? tokens))
+;;                                 (recur (rest tokens)
+;;                                        (xml/parse next-state (first tokens)))
+;;                                 next-state))))
+
 
 
 
@@ -156,18 +210,26 @@
   [{ssl :ssl bootstrap :server handlers :handlers :as server}]
   (do (let [pipeline (. bootstrap getPipeline)]
 	(doseq [s handlers]
-          (condp = s
-            :string (doto pipeline
-                      (.addLast "decoder" (StringDecoder.))
-                      (.addLast "encoder" (StringEncoder.)))
-            :clj    (doto pipeline
-                      (.addLast "clojure" clj-handler))
-            :ssl    (.addLast pipeline "ssl" (SslHandler. ssl))
-            :print  (.addLast pipeline "print" print-handler)
-            :echo   (.addLast pipeline "echo" echo-handler)
-            (do (.addLast pipeline 
-                      (str "handler_" (.toString s)) 
-                      (get-channel-handler s server))))))
+          (cond (keyword? s) (condp = s
+			       :string (doto pipeline
+					 (.addLast "decoder" (StringDecoder.))
+					 (.addLast "encoder" (StringEncoder.)))
+			       :clj    (doto pipeline
+					 (.addLast "clojure" clj-handler))
+			       :print  (.addLast pipeline "print" print-handler)
+			       :echo   (.addLast pipeline "echo" echo-handler))
+			;       :http   (doto pipeline
+			;		 (.addLast "decoder" (HttpRequestDecoder.))
+			;		 (.addLast "encoder" (HttpRequestEncoder.))
+			;		 (.addLast "aggregator" (HttpChunkAggregator. 65536))
+			;		 (.addLast "chunkedWriter" (ChunkedWriteHandler.))))
+			;       :xml    (.addLast pipeline "xml" xml-handler)
+			;       :json   (.addLast pipeline "json" json-handler))
+		(vector? s)    (condp = (first s)
+                                 :ssl  (.addLast "pipeline" (SslHandler. ssl)))
+                true           (do (.addLast pipeline 
+                                             (str "handler_" (.toString s)) 
+                                             (get-channel-handler s server))))))
       (.setOption bootstrap "child.tcpNoDelay" true)
       (.setOption bootstrap "child.keepAlive" true)
       (.setOption bootstrap "tcpNoDelay" true)

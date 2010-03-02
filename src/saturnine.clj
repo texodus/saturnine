@@ -14,8 +14,7 @@
 	   [org.jboss.netty.handler.ssl SslHandler])
   (:require [clojure.contrib.logging :as logging])
   (:use [clojure.contrib.logging :only [log]]
-	[saturnine.netty]
-	[saturnine.ssl]))
+	[saturnine.internal]))
 
 
 
@@ -66,16 +65,13 @@
   "Sends a message upstream (dispatches :upstream).  Requires a thread-bound 
    *connection*"
   [msg] {:pre [*connection*]}
-  (let [{channel :channel context :context} *connection*
-        ip (.getRemoteAddress channel)]
-    (.sendUpstream context (UpstreamMessageEvent. channel msg ip))))
+  (send-up-internal msg))
 
 (defn send-down
   "Sends a message downstream (dispatches :downstream).  Requires a thread-bound
    *connection*"
   [msg] {:pre [*connection*]}
-  (let [{channel :channel context :context event :event} *connection*] 
-    (.sendDownstream context (DownstreamMessageEvent. channel (.getFuture event) msg (.getRemoteAddress channel)))))
+  (send-down-internal msg))
 
 (defn start-tls 
   "Convert the connection to TLS in STARTTLS mode (ignoring the first message).
@@ -151,16 +147,17 @@
 
 (defmacro defserver
   "This macro allows the user to define a server instance.  You must call 
-   (start name) to start the server once it's been defined.  
-
-   In addition to Handlers you define yourself, defserver accepts a few built in
-   Handlers:
+   (start name) to start the server once it's been defined.  In addition to 
+   Handlers you define yourself, defserver accepts a few built in Handlers:
 
      :ssl    - SSL
      :string - translates to String (flushes on newline)
      :clj    - translates Strings to Clojure data structures with read-string
      :echo   - echos upstream messages downstream
-     :print  - logs messages via clojure.contrib.logging"
+     :print  - logs messages via clojure.contrib.logging
+     :xml    - translates Strings to XML Elements (as Clojure maps)
+     :json   - translates Strings to/from JSON objects (with clojure.contrib.json)
+     :http   - translates Bytes to HTTP Request/Response objects (SOON TO BE CHANGED)"
   [name port & handlers]
   `(def ~name (Server nil nil nil ~port ~(apply vector handlers))))
 

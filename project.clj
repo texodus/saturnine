@@ -29,8 +29,11 @@
                  [org.clojure/clojure-contrib "1.2.0-master-SNAPSHOT"]
                  [org.jboss.netty/netty "3.1.0.BETA2"]
                  [log4j/log4j "1.2.14"]]
-  :dev-dependencies [[leiningen/lein-swank "1.1.0"]
+  :dev-dependencies [[leiningen/lein-swank "1.1.0"] ; TODO there is a log4j version conflict with leiningen!
                      [autodoc "0.7.0"]]
-  :autodoc {:name "Saturnine", :page-title "API Documentation", :web-src-dir "http://www.github.com/texodus/saturnine/tree/" :copyright "(c) 2009, Andrew Stein"}
+  :autodoc {:name "Saturnine"
+	    :page-title "API Documentation"
+	    :web-src-dir "http://www.github.com/texodus/saturnine/tree/" 
+	    :copyright "(c) 2009, Andrew Stein"}
   :namespaces [saturnine saturnine.sample])
 

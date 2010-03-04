@@ -60,8 +60,8 @@
 (defn write-all 
   "Helper method for the Chat handler, writes msg to every IP in sample.users,
    except the supplied ip."
-  [users ip msg]
-  (doseq [user (vals (dissoc users ip))] 
+  [users msg]
+  (doseq [user (vals (dissoc users *ip*))] 
     (write user msg)))
 
 (defhandler #^{:doc
@@ -70,11 +70,11 @@
    functions are used to keep a list of every active connection, so messages 
    from one client can be forwarded to all of the others."}
   Chat [users]
-  (connect [] (do (dosync (alter users assoc (ip) (connection)))
-                  (write-all @users (ip) (str "User " (ip) " connected!\r\n"))))
-  (disconnect [] (do (dosync (alter users dissoc (ip)))
-                     (write-all @users (ip) (str "User " (ip) " disconnected!\r\n"))))
-  (upstream [msg] (write-all @users (ip) (str (ip) " : " msg))))
+  (connect [] (do (dosync (alter users assoc *ip* *connection*))
+                  (write-all @users "User connected!\r\n")))
+  (disconnect [] (do (dosync (alter users dissoc *ip*))
+                     (write-all @users "User disconnected!\r\n")))
+  (upstream [msg] (write-all @users msg)))
 
 (defserver #^{:doc
   "chat-server is a simple telnet multi-user chat room.  Every newline-delimited 

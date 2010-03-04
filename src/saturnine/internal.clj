@@ -7,7 +7,9 @@
            [javax.net.ssl SSLContext KeyManagerFactory TrustManager SSLEngine]
            [org.jboss.netty.bootstrap ServerBootstrap ClientBootstrap]
            [org.jboss.netty.logging InternalLoggerFactory Log4JLoggerFactory JdkLoggerFactory CommonsLoggerFactory]
-           [org.jboss.netty.channel Channel SimpleChannelHandler ChannelFutureListener ChannelHandlerContext ChannelStateEvent ChildChannelStateEvent ExceptionEvent UpstreamMessageEvent DownstreamMessageEvent MessageEvent]
+           [org.jboss.netty.channel Channels Channel ChannelPipeline SimpleChannelHandler ChannelFutureListener 
+	    ChannelHandlerContext ChannelStateEvent ChildChannelStateEvent ExceptionEvent UpstreamMessageEvent 
+	    DownstreamMessageEvent MessageEvent]
            [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory NioClientSocketChannelFactory]
            [org.jboss.netty.channel.socket.oio OioServerSocketChannelFactory OioClientSocketChannelFactory]
            [org.jboss.netty.handler.codec.string StringEncoder StringDecoder]
@@ -25,9 +27,11 @@
 ;;;;
 ;;;; Networking Protocols
 
-(deftype Server [#^ServerBootstrap server #^ClientBootstrap client #^SSLContext ssl port handlers] clojure.lang.IPersistentMap)
+(deftype Server [#^ServerBootstrap server port handlers])
 
-(deftype Connection [#^ChannelHandlerContext context #^Channel channel #^MessageEvent event #^::Server server] clojure.lang.IPersistentMap)
+(deftype Client [#^ClientBootstrap client handlers])
+
+(deftype Connection [#^ChannelHandlerContext context #^ChannelPipeline pipeline #^Channel channel])
 
 (defprotocol Handler
   (upstream   [x msg] "Handle a received message") 
@@ -45,7 +49,7 @@
 ;;;; SSL
 
 (defn #^SSLContext get-ssl-context
-  [path key-pass cert-pass]
+  [#^String path #^String key-pass #^String cert-pass]
   (doto (SSLContext/getInstance "TLS")
     (.init (.getKeyManagers (doto (KeyManagerFactory/getInstance "SunX509")
                               (.init (doto (KeyStore/getInstance "JKS")
@@ -58,10 +62,11 @@
                           (checkServerTrusted [x y] nil))])
            nil)))
 
-(defn get-ssl-engine 
-  [#^SSLContext ssl-context #^boolean client-mode]
-  (doto (.createSSLEngine ssl-context)
-    (.setUseClientMode client-mode)))
+(defn #^SslHandler get-ssl-handler 
+  [#^SSLContext ssl-context client-mode starttls]
+  (SslHandler. (doto (.createSSLEngine ssl-context)
+		 (.setUseClientMode client-mode))
+	       starttls))
 
 
 
@@ -71,56 +76,67 @@
 ;;;;
 ;;;; Netty Internal
 
-(def *connection*)
+(def #^{:doc "Thread-bound connection"} *connection* nil)
+
+(def #^{:doc "Thread-bound ip"} *ip* nil)
+
+(defn log-ip
+  [& args]
+  (log (first args) (str *ip* ":" (apply str (rest args)))))
 
 (defn messageReceived
-  [server ctx event handlers]
-  (let [ip (.. event getChannel getRemoteAddress)]
-    (binding [*connection* (Connection ctx (.getChannel event) event server)]
-      (let [new-state (upstream (@handlers ip) (. event getMessage))]
-	(if (not (nil? new-state))
-	  (dosync (alter handlers assoc ip new-state)))))))
+  [ctx event handlers]
+  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
+	    *ip*         (.. event getChannel getRemoteAddress)
+	    log          log-ip]
+    (let [new-state (upstream (@handlers *ip*) (. event getMessage))]
+      (if (not (nil? new-state))
+	(dosync (alter handlers assoc *ip* new-state))))))
 
 (defn writeRequested
-  [server ctx event handlers]
-  (let [ip (.. event getChannel getRemoteAddress)]
-    (binding [*connection* (Connection ctx (.getChannel event) event server)]
-      (let [new-state (downstream (@handlers ip) (.getMessage event))]
-	(if (not (nil? new-state))
-	  (dosync (alter handlers assoc ip new-state)))))))
+  [ctx event handlers]
+  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
+	    *ip*         (.. event getChannel getRemoteAddress)
+	    log          log-ip]
+    (let [new-state (downstream (@handlers *ip*) (.getMessage event))]
+      (if (not (nil? new-state))
+	(dosync (alter handlers assoc *ip* new-state))))))
 
 (defn channelConnected
-  [master server ctx event handlers]
-  (let [ip (.. event getChannel getRemoteAddress)]
-    (binding [*connection* (Connection ctx (.getChannel event) event server)]
-      (do (let [new-state (connect master)]
-            (if new-state (dosync (alter handlers assoc ip new-state)))
-            (.sendUpstream ctx event))))))
-
-(defn channelDisconnected
-  [server ctx event handlers]
-  (let [ip (.. event getChannel getRemoteAddress)]
-    (binding [*connection* (Connection ctx (.getChannel event) event server)]
-      (do (disconnect (@handlers ip))
-	  (dosync (alter handlers dissoc ip))
+  [master ctx event handlers]
+  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
+	    *ip*         (.. event getChannel getRemoteAddress)
+	    log          log-ip]
+    (do (let [new-state (connect master)]
+	  (if new-state (dosync (alter handlers assoc *ip* new-state)))
 	  (.sendUpstream ctx event)))))
 
+(defn channelDisconnected
+  [ctx event handlers]
+  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
+	    *ip*         (.. event getChannel getRemoteAddress)
+	    log          log-ip]
+    (do (disconnect (@handlers *ip*))
+	(dosync (alter handlers dissoc *ip*))
+	(.sendUpstream ctx event))))
+
 (defn exception
-  [server ctx event handlers]
-  (let [ip (.. event getChannel getRemoteAddress)]
-    (binding [*connection* (Connection ctx (.getChannel event) event server)]
-      (do (let [new-state (error (@handlers ip) (bean (.getCause event)))]
-            (if new-state (dosync (alter handlers assoc ip new-state))))))))
+  [ctx event handlers]
+  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
+	    *ip*         (.. event getChannel getRemoteAddress)
+	    log          log-ip]
+    (do (let [new-state (error (@handlers *ip*) (bean (.getCause event)))]
+	  (if new-state (dosync (alter handlers assoc *ip* new-state)))))))
 
 (defn get-channel-handler
   [#^::Handler master #^::Server server] 
-  (let [states (ref {})]
+  (let [handlers (ref {})]
     (proxy [SimpleChannelHandler] []
-      (messageReceived     [ctx event] (messageReceived server ctx event states))
-      (writeRequested      [ctx event] (writeRequested server ctx event states))
-      (channelConnected    [ctx event] (channelConnected master server ctx event states))
-      (channelDisconnected [ctx event] (channelDisconnected server ctx event states))
-      (exceptionCaught     [ctx event] (exception server ctx event states)))))
+      (messageReceived     [ctx event] (messageReceived ctx event handlers))
+      (writeRequested      [ctx event] (writeRequested ctx event handlers))
+      (channelConnected    [ctx event] (channelConnected master ctx event handlers))
+      (channelDisconnected [ctx event] (channelDisconnected ctx event handlers))
+      (exceptionCaught     [ctx event] (exception ctx event handlers)))))
 
 (defn send-up-internal
   [msg]
@@ -130,9 +146,9 @@
 
 (defn send-down-internal
   [msg]
-  (let [{channel :channel context :context event :event} *connection*] 
+  (let [{channel :channel context :context} *connection*] 
     (.sendDownstream context (DownstreamMessageEvent. channel 
-						      (.getFuture event) 
+						      (Channels/future channel)
 						      msg 
 						      (.getRemoteAddress channel)))))
 
@@ -166,10 +182,10 @@
                                                                                   "nil"))
                                                                             (.getRemoteAddress (.getChannel event))))))
        (writeRequested  [ctx event] (do (.sendDownstream ctx
-                                                     (DownstreamMessageEvent. (.getChannel event)
-                                                                              (.getFuture event)
-                                                                              (str (print-str (.getMessage event)) "\r\n")
-                                                                              (.getRemoteAddress (.getChannel event))))))
+							 (DownstreamMessageEvent. (.getChannel event)
+										  (.getFuture event)
+										  (str (print-str (.getMessage event)) "\r\n")
+										  (.getRemoteAddress (.getChannel event))))))
        (connect [ctx event] nil)
        (disconnect [ctx event] nil)))
 
@@ -206,8 +222,11 @@
 ;;;;
 ;;;; Startup
 
+; TODO add DelimiterBasedFrameDecoder
+; TODO modify for use with client startup sequence
+; TODO make options configurable
 (defn start-helper
-  [{ssl :ssl bootstrap :server handlers :handlers :as server}]
+  [{bootstrap :server handlers :handlers :as server}]
   (do (let [pipeline (. bootstrap getPipeline)]
 	(doseq [s handlers]
           (cond (keyword? s) (condp = s
@@ -218,15 +237,16 @@
 					 (.addLast "clojure" clj-handler))
 			       :print  (.addLast pipeline "print" print-handler)
 			       :echo   (.addLast pipeline "echo" echo-handler))
-			;       :http   (doto pipeline
-			;		 (.addLast "decoder" (HttpRequestDecoder.))
-			;		 (.addLast "encoder" (HttpRequestEncoder.))
-			;		 (.addLast "aggregator" (HttpChunkAggregator. 65536))
-			;		 (.addLast "chunkedWriter" (ChunkedWriteHandler.))))
-			;       :xml    (.addLast pipeline "xml" xml-handler)
-			;       :json   (.addLast pipeline "json" json-handler))
+		       ;       :http   (doto pipeline
+		       ;		 (.addLast "decoder" (HttpRequestDecoder.))
+		       ;		 (.addLast "encoder" (HttpRequestEncoder.))
+		       ;		 (.addLast "aggregator" (HttpChunkAggregator. 65536))
+		       ;		 (.addLast "chunkedWriter" (ChunkedWriteHandler.))))
+		       ;       :xml    (.addLast pipeline "xml" xml-handler)
+		       ;       :json   (.addLast pipeline "json" json-handler))
 		(vector? s)    (condp = (first s)
-                                 :ssl  (.addLast "pipeline" (SslHandler. ssl)))
+                                 :ssl      (.addLast pipeline "ssl" (get-ssl-handler (apply get-ssl-context (rest s)) false false))
+				 :starttls (.addLast pipeline "ssl" (get-ssl-handler (apply get-ssl-context (rest s)) false true)))
                 true           (do (.addLast pipeline 
                                              (str "handler_" (.toString s)) 
                                              (get-channel-handler s server))))))
@@ -257,17 +277,20 @@
 	      (Executors/newCachedThreadPool)
 	      (Executors/newCachedThreadPool)))))
 
-(defn start-internal
-  [server ssl blocking]
-  (do (InternalLoggerFactory/setDefaultFactory 
-       (condp = logging/*impl-name*
-         "org.apache.log4j"           (Log4JLoggerFactory.)
-         "java.util.logging"          (JdkLoggerFactory.)
-         "org.apache.commons.logging" (CommonsLoggerFactory.)))
-       (let [server (assoc server 
-                     :ssl ssl 
-                     :server (empty-server blocking)
-                     :client (empty-client blocking))]
-	(do ;(start-helper server) ;  TODO make this work for client stack
-	    (assoc server :server (.bind (start-helper server) (InetSocketAddress. (:port server))))))))
-	   ; server))))
+(defn init-logging
+  []
+  (InternalLoggerFactory/setDefaultFactory 
+   (condp = logging/*impl-name*
+     "org.apache.log4j"           (Log4JLoggerFactory.)
+     "java.util.logging"          (JdkLoggerFactory.)
+     "org.apache.commons.logging" (CommonsLoggerFactory.))))
+
+(defn start-server
+  [server] {:pre [server]}
+  (do (init-logging)
+      (.bind (start-helper server) (InetSocketAddress. (:port server)))
+      server))
+
+(defn start-client
+  [client] {:pre [false]}   ; TODO not implemented!
+  nil)

@@ -18,6 +18,8 @@ simplicity in mind:
 
 - SSL/TLS support (with starttls), also supports nonblocking operation.
 
+- clojure.contrib.logging integration (is this a feature?)
+
 ### Installation ###
 
 You'll need Git, Leiningen, Java, a computer of some sort, and a source of
@@ -25,20 +27,24 @@ electricity.  Install Saturnine with:
 
      git clone http://github.com/texodus/saturnine.git
      cd saturnine
-     lein deps && lein install
+     lein install
 
 ... or add it to your leiningen `project.clj` ...
 
      :dependencies [[saturnine "0.1-SNAPSHOT"]]
 
+... or your maven pom.xml ...
+
+     <dependency>
+       <groupId>saturnine</groupId>
+       <artifactId>saturnine</artifactId>
+       <version>0.1-SNAPSHOT</version>
+     </dependency>
+
 ... and add (:use 'saturnine) to your namespace declaration anywhere you want to
 use Saturnine.
 
 ### Tutorial ###
-
-For the API documentation, see [http://texodus.github.com/saturnine] or run
-
-     lein autodoc
 
 Saturnine applications are composed of Handlers - datatypes that represent the
 processing state of received IO events from a network connection.  When a 
@@ -93,15 +99,7 @@ function, then returns a new Sum, which becomes the new state of the connection,
 and will be called on all future messages from this connection that are flushed
 from :clj.
 
-For further examples, please see the 'sample namespace.
-
-
-
-
-
-### Changelog ###
-
-* 3/1/10 v0.1 - Initial Release
+For further examples, please see the [API Documentation](http://texodus.github.com/saturnine) and ['sample](http://github.com/texodus/saturnine/tree/master/src/saturnine/sample.clj) namespace.
 
 
 
@@ -110,7 +108,6 @@ For further examples, please see the 'sample namespace.
 ### Planned Features ###
 
 - UDP support
-- clojure.contrib.logging/log re-binding
 - Optimization 
     - Replace SimpleChannelHandler with reified ChannelHandler
     - Add support for zero-copy ChannelBuffer manipulation

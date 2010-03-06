@@ -31,7 +31,7 @@
 
 (deftype Client [#^ClientBootstrap client handlers])
 
-(deftype Connection [#^ChannelHandlerContext context #^ChannelPipeline pipeline #^Channel channel])
+(deftype Connection [#^ChannelPipeline pipeline #^ChannelHandlerContext context #^Channel channel])
 
 (defprotocol Handler
   (upstream   [x msg] "Handle a received message") 
@@ -76,9 +76,11 @@
 ;;;;
 ;;;; Netty Internal
 
-(def #^{:doc "Thread-bound connection"} *connection* nil)
+(def *connection* nil)
 
-(def #^{:doc "Thread-bound ip"} *ip* nil)
+(def *event* nil)
+
+(def *ip* nil)
 
 (defn log-ip
   [& args]
@@ -88,6 +90,7 @@
   [ctx event handlers]
   (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
 	    *ip*         (.. event getChannel getRemoteAddress)
+            *event*      event
 	    log          log-ip]
     (let [new-state (upstream (@handlers *ip*) (. event getMessage))]
       (if (not (nil? new-state))
@@ -97,6 +100,7 @@
   [ctx event handlers]
   (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
 	    *ip*         (.. event getChannel getRemoteAddress)
+            *event*      event
 	    log          log-ip]
     (let [new-state (downstream (@handlers *ip*) (.getMessage event))]
       (if (not (nil? new-state))
@@ -106,6 +110,7 @@
   [master ctx event handlers]
   (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
 	    *ip*         (.. event getChannel getRemoteAddress)
+            *event*      event
 	    log          log-ip]
     (do (let [new-state (connect master)]
 	  (if new-state (dosync (alter handlers assoc *ip* new-state)))
@@ -115,6 +120,7 @@
   [ctx event handlers]
   (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
 	    *ip*         (.. event getChannel getRemoteAddress)
+            *event*      event
 	    log          log-ip]
     (do (disconnect (@handlers *ip*))
 	(dosync (alter handlers dissoc *ip*))
@@ -124,6 +130,7 @@
   [ctx event handlers]
   (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
 	    *ip*         (.. event getChannel getRemoteAddress)
+            *event*      event
 	    log          log-ip]
     (do (let [new-state (error (@handlers *ip*) (bean (.getCause event)))]
 	  (if new-state (dosync (alter handlers assoc *ip* new-state)))))))
@@ -136,7 +143,7 @@
       (writeRequested      [ctx event] (writeRequested ctx event handlers))
       (channelConnected    [ctx event] (channelConnected master ctx event handlers))
       (channelDisconnected [ctx event] (channelDisconnected ctx event handlers))
-      (exceptionCaught     [ctx event] (exception ctx event handlers)))))
+    #_(exceptionCaught     [ctx event] (exception ctx event handlers)))))
 
 (defn send-up-internal
   [msg]
@@ -145,12 +152,12 @@
     (.sendUpstream context (UpstreamMessageEvent. channel msg ip))))
 
 (defn send-down-internal
-  [msg]
+  [msg] 
   (let [{channel :channel context :context} *connection*] 
-    (.sendDownstream context (DownstreamMessageEvent. channel 
-						      (Channels/future channel)
+    (.sendDownstream context (DownstreamMessageEvent. (.getChannel *event*) 
+						      (.getFuture *event*) ;(Channels/future channel)
 						      msg 
-						      (.getRemoteAddress channel)))))
+						      (.. *event* getChannel getRemoteAddress)))))
 
 
 
@@ -191,14 +198,20 @@
 
 (def print-handler
      (proxy [SimpleChannelHandler] []
-       (messageReceived [ctx event] (do (doseq [line (string/split-lines (.getMessage event))]
-                                          (log :info (str (.. event getChannel getRemoteAddress) " --> " line)))
+       (messageReceived [ctx event] (do (if (string? (.getMessage event))
+                                          (doseq [line (string/split-lines (.getMessage event))]
+                                            (log :info (str (.. event getChannel getRemoteAddress) " --> " line)))
+                                          (log :info (str (.. event getChannel getRemoteAddress) " --> " (.getMessage event))))
                                         (.sendUpstream ctx event)))
-       (writeRequested  [ctx event] (do (doseq [line (string/split-lines (.getMessage event))]
-                                          (log :info (str (.. event getChannel getRemoteAddress) " <-- " line)))
+       (writeRequested  [ctx event] (do (if (string? (.getMessage event))
+                                          (doseq [line (string/split-lines (.getMessage event))]
+                                            (log :info (str (.. event getChannel getRemoteAddress) " <-- " line)))
+                                          (log :info (str (.. event getChannel getRemoteAddress) " <-- " (.getMessage event))))
                                         (.sendDownstream ctx event)))
        (connect [ctx event] nil)
        (disconnect [ctx event] nil)))
+
+;; TODO Refactor this to fucking make sense
 
 ;; (deftype XML [] 
 ;;   Handler (connect    []    (xml/Element nil nil nil []))
@@ -277,17 +290,17 @@
 	      (Executors/newCachedThreadPool)
 	      (Executors/newCachedThreadPool)))))
 
-(defn init-logging
-  []
+;(defn init-logging
+ ; []
   (InternalLoggerFactory/setDefaultFactory 
    (condp = logging/*impl-name*
      "org.apache.log4j"           (Log4JLoggerFactory.)
      "java.util.logging"          (JdkLoggerFactory.)
-     "org.apache.commons.logging" (CommonsLoggerFactory.))))
+     "org.apache.commons.logging" (CommonsLoggerFactory.)))
 
 (defn start-server
   [server] {:pre [server]}
-  (do (init-logging)
+  (do ;(init-logging)
       (.bind (start-helper server) (InetSocketAddress. (:port server)))
       server))
 

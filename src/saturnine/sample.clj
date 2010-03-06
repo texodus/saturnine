@@ -18,8 +18,8 @@
    future calls."}
   Sum [sum]
   (upstream [msg] (let [new-sum (+ sum msg)]
-                         (send-down (str "Sum is " new-sum))
-                         (assoc this :sum new-sum))))
+                    (send-down (str "Sum is " new-sum))
+                    (assoc this :sum new-sum))))
 
 (defserver #^{:doc
   "Sum is a simple server that reads a stream of newline-delimited Integers and
@@ -31,7 +31,7 @@
              single connection.  Non-integers that are evalable will throw a
              ClassCastException to the default handle, while unevalable ones 
              will display a parse error in the :clj handler as well"}
-  sum-server 1234 :string :clj (Sum 0))
+  sum-server 1234 :string :clj :print (Sum 0))
 
 
 
@@ -61,7 +61,7 @@
   "Helper method for the Chat handler, writes msg to every IP in sample.users,
    except the supplied ip."
   [users msg]
-  (doseq [user (vals (dissoc users *ip*))] 
+  (doseq [user (vals (dissoc users (ip)))] 
     (write user msg)))
 
 (defhandler #^{:doc
@@ -70,9 +70,9 @@
    functions are used to keep a list of every active connection, so messages 
    from one client can be forwarded to all of the others."}
   Chat [users]
-  (connect [] (do (dosync (alter users assoc *ip* *connection*))
+  (connect [] (do (dosync (alter users assoc (ip) (conn)))
                   (write-all @users "User connected!\r\n")))
-  (disconnect [] (do (dosync (alter users dissoc *ip*))
+  (disconnect [] (do (dosync (alter users dissoc (ip)))
                      (write-all @users "User disconnected!\r\n")))
   (upstream [msg] (write-all @users msg)))
 
@@ -132,9 +132,3 @@
 ;; 							     (.setContentLength (.length raf)))]
 ;; 					      (write (ChunkedFile. raf 0 (.length raf) 8192)))
 ;; 					    (catch Exception e (write (error-response NOT_FOUND)))))))))))))
-					      
-				 
-			   
-			   
-
-

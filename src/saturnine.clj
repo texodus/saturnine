@@ -6,15 +6,17 @@
   (:import [java.net InetAddress InetSocketAddress URL]
            [java.util.concurrent Executors]
            [org.jboss.netty.bootstrap ServerBootstrap ClientBootstrap]
-           [org.jboss.netty.channel ChannelPipeline Channel SimpleChannelHandler ChannelFutureListener ChannelHandlerContext ChannelStateEvent ChildChannelStateEvent ExceptionEvent UpstreamMessageEvent DownstreamMessageEvent MessageEvent]
+           [org.jboss.netty.channel ChannelPipeline Channel SimpleChannelHandler ChannelFutureListener 
+            ChannelHandlerContext ChannelStateEvent ChildChannelStateEvent ExceptionEvent UpstreamMessageEvent 
+            DownstreamMessageEvent MessageEvent]
            [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory NioClientSocketChannelFactory]
            [org.jboss.netty.channel.socket.oio OioServerSocketChannelFactory OioClientSocketChannelFactory]
            [org.jboss.netty.handler.codec.string StringEncoder StringDecoder]
            [org.jboss.netty.logging InternalLoggerFactory Log4JLoggerFactory JdkLoggerFactory CommonsLoggerFactory]
 	   [org.jboss.netty.handler.ssl SslHandler])
-  (:require [clojure.contrib.logging :as logging]
-	    [saturnine.internal :as internal])
-  (:use [clojure.contrib.logging :only [log]]))
+  (:require [clojure.contrib.logging :as logging])
+  (:use [clojure.contrib.logging :only [log]]
+        [saturnine.internal]))
 
 
 
@@ -24,9 +26,9 @@
 ;;;;
 ;;;; Connection
 
-(def *connection* internal/*connection*)
+(defn #^{:doc "Thread-bound connection"} conn [] *connection*)
 
-(def *ip* internal/*ip*)
+(defn #^{:doc "Thread-bound ip address"} ip [] *ip*)
 
 (defn close
   {:doc "Closes the connection and dispatches a disconnect to the handlers.  Closes 
@@ -51,7 +53,7 @@
   "Open a new Connection to a remote host and port; returns the new Connection"
   ([#^ClientBootstrap client host port]
      (do (log :debug (str "Opening connection to " host ":" port)) 
-         (internal/Connection nil 
+         (Connection nil 
 			      (.getPipeline client) 
 			      (.connect client (InetSocketAddress. host port))))))
 
@@ -59,13 +61,13 @@
   "Sends a message upstream to the next handler in the stack.  Requires a 
    thread-bound *connection*"
   [msg] {:pre [*connection*]}
-  (internal/send-up-internal msg))
+  (send-up-internal msg))
 
 (defn send-down
   "Sends a message downstream to the previous handler in the stack.  Requires a 
    thread-bound *connection*"
   [msg] {:pre [*connection*]}
-  (internal/send-down-internal msg))
+  (send-down-internal msg))
 
 (defn start-tls 
   "Convert the connection to SSL in STARTTLS mode (ignoring the first message if
@@ -97,11 +99,11 @@
   (stop  [x] "Stop a Server or Client"))
 
 (extend :saturnine.internal/Server 
-  Bootstrap {:start internal/start-server
+  Bootstrap {:start start-server
 	     :stop  (fn [{server :server}] (.unbind server))})
 
 (extend :saturnine.internal/Client
-  Bootstrap {:start internal/start-client
+  Bootstrap {:start start-client
              :stop  (fn [_] nil)})
 
 
@@ -125,12 +127,14 @@
   (let [syms (into #{} (map first handles))
 	defaults ['(connect [] this) 
 		  '(disconnect [] nil) 
-		  '(upstream [msg] (~`send-up msg)) 
-		  '(downstream [msg] (~`send-down msg))
-                  '(error [msg] (clojure.contrib.logging/log :error msg))]]
+		  '(upstream [msg] (saturnine.internal/send-up-internal msg)) 
+		  '(downstream [msg] (saturnine.internal/send-down-internal msg))
+                  '(error [msg] (do (clojure.contrib.logging/log :error msg)
+                                    (doseq [el (:stacktrace msg)]
+                                      (clojure.contrib.logging/log :error el))))]]
     `(deftype ~name ~args :as ~'this
        ~'clojure.lang.IPersistentMap
-       internal/Handler ~@handles
+       Handler ~@handles
                         ~@(filter identity 
 				  (for [form defaults]
 				    (if (not (syms (first form)))
@@ -161,14 +165,14 @@
 	handlers (if (#{:blocking :nonblocking} options)
 		   handlers
 		   (cons options handlers))]
-    `(def ~name (internal/Server (saturnine.internal/empty-server ~blocking) ~port ~(apply vector handlers)))))
+    `(def ~name (Server (empty-server ~blocking) ~port ~(apply vector handlers)))))
 
 (defmacro defclient
   {:doc "This macro allows the user to define a client instance.  Once the 
          client has been instantiated, you can create new connections with 
          (open client ip).  The only option available is :nonblocking or :blocking 
          (not both), which configures the client to use NIO.  In addition to Handlers 
-         you define yourself, defserver accepts a few built in Handlers:
+         you define yourself, defclient accepts a few built in Handlers:
 
            :ssl      - SSL; use with params for SSLContext, ie [:ssl keystore 
                        keypassword certpassword]
@@ -188,6 +192,4 @@
 	handlers (if (#{:blocking :nonblocking} options)
 		   handlers
 		   (cons options handlers))]
-    `(def ~name (internal/Client (saturnine.internal/empty-client ~blocking) ~(apply vector handlers)))))
-   
-
+    `(def ~name (Client (empty-client ~blocking) ~(apply vector handlers)))))

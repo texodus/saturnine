@@ -25,7 +25,7 @@ namespace.
     <div id="AllContentContainer">
       <div id="Header">
 	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
-	<h1><a title="page header title" id="page-header" href="index.html">Saturnine API Documentation</a></h1>
+	<h1><a title="page header title" id="page-header" href="index.html">API Documentation</a></h1>
       </div>
       <div id="leftcolumn"><div style="text-align: center;"></div>
 <div class="menu">
@@ -34,7 +34,7 @@ namespace.
     <a class="wiki_link" href="api-index.html">API Index</a><br />
     <a class="wiki_link" href="#">Namespaces:</a>
     <ul id="left-sidebar-list">
-      <li><a href="sample-api.html" class="wiki_link">sample</a></li><li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
+      <li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
     </ul>
   </div>
 </div>
@@ -46,10 +46,6 @@ namespace.
                 <div id="right-sidebar"><div id="toc">
   <h1 class="nopad">Table of Contents</h1>
   <div style="margin-left: 1em;" class="toc-section">
-    <a href="#sample">sample</a>
-    
-    <br />
-  </div><div style="margin-left: 1em;" class="toc-section">
     <a href="#saturnine">saturnine</a>
     
     <br />
@@ -61,39 +57,9 @@ namespace.
 <div id="project-description">Saturnine is a Clojure library to assist in developing server applications
    in a message-passing style.  It is built on top of JBoss Netty, and inherits 
    a number of features from this framework, including trivial configuration in
-   blocking or non-blocking modes and SSL/TLS support (with starttls).  Here's 
-   a simple REPL server:
-<pre id="namespace-docstr">
-     (use 'saturnine)
-
-     (defserver repl-server 1234 :string :print :clj :echo)
-
-     (start repl-server :nonblocking)
-</pre>
-   Here's a slighlty more complex sum-calculating server that implements a 
-   custom Handler:
-<pre id="namespace-docstr">
-     (defhandler Sum [sum]
-       (upstream [msg] (let [new-sum (+ sum msg)]
-                         (send-down (str "Sum is " new-sum "\r\n"))
-                         (assoc this :sum new-sum))))
-
-     (defserver sum-server 1234 :string :clj (Sum 0))
-</pre></div>
+   blocking or non-blocking modes and SSL/TLS support (with starttls).</div>
 <br />
 <div id="namespace-entry">
-  <br />
-  <hr />
-  <h2 id="sample">sample</h2>
-  by <span id="author">unknown author</span><br />
-  <a href="sample-api.html" id="api-link">Detailed API documentation</a><br />
-  <pre id="namespace-docstr">Contains a few sample implementations to illustrate usage of the Saturnine 
-library</pre>
-  
-  Public variables and functions:
-  <span id="var-link"><a href="sample-api.html#sample/Sum" id="var-tag">Sum</a> </span><span id="var-link"><a href="sample-api.html#sample/sum-server" id="var-tag">sum-server</a> </span><br />
-  
-</div><div id="namespace-entry">
   <br />
   <hr />
   <h2 id="saturnine">saturnine</h2>
@@ -104,8 +70,30 @@ necessary to build server applications.  This should be the only namespace
 you need to import into your project</pre>
   
   Public variables and functions:
-  <span id="var-link"><a href="saturnine-api.html#saturnine/close" id="var-tag">close</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/connection" id="var-tag">connection</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defhandler" id="var-tag">defhandler</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defserver" id="var-tag">defserver</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/ip" id="var-tag">ip</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/open" id="var-tag">open</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-down" id="var-tag">send-down</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-up" id="var-tag">send-up</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/start" id="var-tag">start</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/start-tls" id="var-tag">start-tls</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/stop" id="var-tag">stop</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/write" id="var-tag">write</a> </span><br />
-  
+  <span id="var-link"><a href="saturnine-api.html#saturnine/close" id="var-tag">close</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/conn" id="var-tag">conn</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defclient" id="var-tag">defclient</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defhandler" id="var-tag">defhandler</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defserver" id="var-tag">defserver</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/ip" id="var-tag">ip</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/open" id="var-tag">open</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-down" id="var-tag">send-down</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-up" id="var-tag">send-up</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/start-tls" id="var-tag">start-tls</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/write" id="var-tag">write</a> </span><br />
+  <span id="subspace"><br />Variables and functions in
+    <span id="name">saturnine.sample</span>:
+    <span id="sub-var-link">
+      <a href="saturnine-api.html#saturnine.sample/Chat">Chat</a>
+    </span><span id="sub-var-link">
+      <a href="saturnine-api.html#saturnine.sample/Sum">Sum</a>
+    </span><span id="sub-var-link">
+      <a href="saturnine-api.html#saturnine.sample/chat-server">chat-server</a>
+    </span><span id="sub-var-link">
+      <a href="saturnine-api.html#saturnine.sample/repl-server">repl-server</a>
+    </span><span id="sub-var-link">
+      <a href="saturnine-api.html#saturnine.sample/sum-server">sum-server</a>
+    </span><span id="sub-var-link">
+      <a href="saturnine-api.html#saturnine.sample/write-all">write-all</a>
+    </span>
+    <br />
+  </span><span id="subspace"><br />Variables and functions in
+    <span id="name">saturnine.xml</span>:
+    <span id="sub-var-link">
+      <a href="saturnine-api.html#saturnine.xml/parse">parse</a>
+    </span>
+    <br />
+  </span>
 </div>
 </div>
               </div>
@@ -113,7 +101,7 @@ you need to import into your project</pre>
           </div>
 	</div>
 	<div id="foot">
-	  <div style="text-align: center;" id="copyright">No copyright info </div>
+	  <div style="text-align: center;" id="copyright">(c) 2009, Andrew Stein</div>
 	</div>
       </div>
       <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />

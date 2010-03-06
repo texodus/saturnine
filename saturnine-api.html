@@ -25,7 +25,7 @@ namespace.
     <div id="AllContentContainer">
       <div id="Header">
 	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
-	<h1><a title="page header title" id="page-header" href="index.html">Saturnine API Documentation</a></h1>
+	<h1><a title="page header title" id="page-header" href="index.html">API Documentation</a></h1>
       </div>
       <div id="leftcolumn"><div style="text-align: center;"></div>
 <div class="menu">
@@ -34,7 +34,7 @@ namespace.
     <a class="wiki_link" href="api-index.html">API Index</a><br />
     <a class="wiki_link" href="#">Namespaces:</a>
     <ul id="left-sidebar-list">
-      <li><a href="sample-api.html" class="wiki_link">sample</a></li><li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
+      <li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
     </ul>
   </div>
 </div>
@@ -50,7 +50,9 @@ namespace.
     <div style="margin-left: 1em;" class="toc-entry">
       <a href="#saturnine/close">close</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
-      <a href="#saturnine/connection">connection</a>
+      <a href="#saturnine/conn">conn</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine/defclient">defclient</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#saturnine/defhandler">defhandler</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
@@ -64,13 +66,31 @@ namespace.
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#saturnine/send-up">send-up</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
-      <a href="#saturnine/start">start</a>
-    </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#saturnine/start-tls">start-tls</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
-      <a href="#saturnine/stop">stop</a>
-    </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#saturnine/write">write</a>
+    </div>
+    <br />
+  </div><div style="margin-left: 1em;" class="toc-section">
+    <a href="#saturnine.sample">saturnine.sample</a>
+    <div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.sample/Chat">Chat</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.sample/Sum">Sum</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.sample/chat-server">chat-server</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.sample/repl-server">repl-server</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.sample/sum-server">sum-server</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.sample/write-all">write-all</a>
+    </div>
+    <br />
+  </div><div style="margin-left: 1em;" class="toc-section">
+    <a href="#saturnine.xml">saturnine.xml</a>
+    <div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.xml/parse">parse</a>
     </div>
     <br />
   </div>
@@ -95,26 +115,52 @@ you need to import into your project</pre>
   <h2 id="saturnine/close">close</h2>
   <span id="var-type">function</span><br />
   <pre id="var-usage">Usage: (close)
-       (close {channel :channel})
+       (close connection)
 </pre>
-  <pre id="var-docstr">Closes the connection and dispatch a :disconnect to the handlers.  Closes 
+  <pre id="var-docstr">Closes the connection and dispatches a disconnect to the handlers.  Closes 
 the thread-bound *connection* if no connection argument is supplied</pre>
-  
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L33" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
-  <h2 id="saturnine/connection">connection</h2>
+  <h2 id="saturnine/conn">conn</h2>
   <span id="var-type">function</span><br />
-  <pre id="var-usage">Usage: (connection)
+  <pre id="var-usage">Usage: (conn)
 </pre>
-  <pre id="var-docstr">Gets the current conenction object for operation form other threads</pre>
-  
+  <pre id="var-docstr">Thread-bound connection</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L29" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine/defclient">defclient</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (defclient name port options? &amp; handlers)
+</pre>
+  <pre id="var-docstr">This macro allows the user to define a client instance.  Once the 
+client has been instantiated, you can create new connections with 
+(open client ip).  The only option available is :nonblocking or :blocking 
+(not both), which configures the client to use NIO.  In addition to Handlers 
+you define yourself, defclient accepts a few built in Handlers:
+
+  :ssl      - SSL; use with params for SSLContext, ie [:ssl keystore 
+              keypassword certpassword]
+  :starttls - Same as :ssl, except that a handler must call starttls once per
+              connection to switch to SSL mode. 
+  :string   - translates to String (flushes on newline)
+  :clj      - translates Strings to Clojure data structures with read-string
+  :echo     - echos upstream messages downstream
+  :print    - logs messages via clojure.contrib.logging
+  :xml      - translates Strings to XML Elements (as Clojure maps)
+  :json     - translates Strings to/from JSON objects (with 
+              clojure.contrib.json)
+  :http     - translates Bytes to HTTP Response objects</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L170" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
   <h2 id="saturnine/defhandler">defhandler</h2>
   <span id="var-type">macro</span><br />
-  <pre id="var-usage">Usage: (defhandler name args &amp; funs)
+  <pre id="var-usage">Usage: (defhandler name args &amp; handles)
 </pre>
   <pre id="var-docstr">This macro allows the user to define Handlers for a server.  Each handler
 represents the intermediate state of a single connection, and is structured
@@ -124,47 +170,51 @@ implementation if missing.  Each function defined should return the new state
 of the connection (returning nil leaves the state unmodified), and optionally 
 pass new messages to the other handlers in the pipeline (via send-up or 
 send-down, which are automatically called for default implementations).</pre>
-  
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L117" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
   <h2 id="saturnine/defserver">defserver</h2>
   <span id="var-type">macro</span><br />
-  <pre id="var-usage">Usage: (defserver name port &amp; handlers)
+  <pre id="var-usage">Usage: (defserver name port options? &amp; handlers)
 </pre>
   <pre id="var-docstr">This macro allows the user to define a server instance.  You must call 
-(start name) to start the server once it's been defined.  
+(start name) to start the server once it's been defined.  The only option
+available is :nonblocking or :blocking (not both), which configures the 
+server to use NIO.  In addition to Handlers you define yourself, defserver 
+accepts a few built in Handlers:
 
-In addition to Handlers you define yourself, defserver accepts a few built in
-Handlers:
-
-  :ssl    - SSL
-  :string - translates to String (flushes on newline)
-  :clj    - translates Strings to Clojure data structures with read-string
-  :echo   - echos upstream messages downstream
-  :print  - logs messages via clojure.contrib.logging</pre>
-  
+  :ssl      - SSL; use with params for SSLContext, ie [:ssl keystore 
+              keypassword certpassword]
+  :starttls - Same as :ssl, except that a handler must call starttls once per
+              connection to switch to SSL mode. 
+  :string   - translates to String (flushes on newline)
+  :clj      - translates Strings to Clojure data structures with read-string
+  :echo     - echos upstream messages downstream
+  :print    - logs messages via clojure.contrib.logging
+  :xml      - translates Strings to XML Elements (as Clojure maps)
+  :json     - translates Strings to/from JSON objects (with 
+              clojure.contrib.json)
+  :http     - translates Bytes to HTTP Request objects</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L143" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
   <h2 id="saturnine/ip">ip</h2>
   <span id="var-type">function</span><br />
   <pre id="var-usage">Usage: (ip)
-       (ip {channel :channel})
 </pre>
-  <pre id="var-docstr">Gets a Connection's IP.  Uses thread-bound *connection* if none supplied</pre>
-  
+  <pre id="var-docstr">Thread-bound ip address</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L31" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
   <h2 id="saturnine/open">open</h2>
   <span id="var-type">function</span><br />
-  <pre id="var-usage">Usage: (open host port)
-       (open {client :client} host port)
+  <pre id="var-usage">Usage: (open client host port)
 </pre>
-  <pre id="var-docstr">Open a new Connection to a remote host and port.  Uses settings from thread-
-bound *connection* if none is supplied</pre>
-  
+  <pre id="var-docstr">Open a new Connection to a remote host and port; returns the new Connection</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L52" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
@@ -172,9 +222,9 @@ bound *connection* if none is supplied</pre>
   <span id="var-type">function</span><br />
   <pre id="var-usage">Usage: (send-down msg)
 </pre>
-  <pre id="var-docstr">Sends a message downstream (dispatches :downstream).  Requires a thread-bound
-*connection*</pre>
-  
+  <pre id="var-docstr">Sends a message downstream to the previous handler in the stack.  Requires a 
+thread-bound *connection*</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L66" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
@@ -182,51 +232,134 @@ bound *connection* if none is supplied</pre>
   <span id="var-type">function</span><br />
   <pre id="var-usage">Usage: (send-up msg)
 </pre>
-  <pre id="var-docstr">Sends a message upstream (dispatches :upstream).  Requires a thread-bound 
-*connection*</pre>
-  
-</div><div id="var-entry">
-  <br />
-  <hr />
-  <h2 id="saturnine/start">start</h2>
-  <span id="var-type">function</span><br />
-  <pre id="var-usage">Usage: (start server)
-       (start server blocking)
-       (start server keystore keypassword certificatepassword)
-       (start server blocking keystore keypassword certificatepassword)
-</pre>
-  <pre id="var-docstr">Initialize all server, client, ssl &amp; logging functionality</pre>
-  
+  <pre id="var-docstr">Sends a message upstream to the next handler in the stack.  Requires a 
+thread-bound *connection*</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L60" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
   <h2 id="saturnine/start-tls">start-tls</h2>
   <span id="var-type">function</span><br />
   <pre id="var-usage">Usage: (start-tls)
+       (start-tls {pipeline :pipeline})
 </pre>
-  <pre id="var-docstr">Convert the connection to TLS in STARTTLS mode (ignoring the first message).
-Requires a thread-bound *connection*</pre>
-  
-</div><div id="var-entry">
-  <br />
-  <hr />
-  <h2 id="saturnine/stop">stop</h2>
-  <span id="var-type">function</span><br />
-  <pre id="var-usage">Usage: (stop {server :server, client :client})
-</pre>
-  <pre id="var-docstr">Stop all server &amp; client listeners</pre>
-  
+  <pre id="var-docstr">Convert the connection to SSL in STARTTLS mode (ignoring the first message if
+this is a server stack).  Requires a :starttls handler in the server or 
+client's definition</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L72" id="var-source">Source</a>
 </div><div id="var-entry">
   <br />
   <hr />
   <h2 id="saturnine/write">write</h2>
   <span id="var-type">function</span><br />
-  <pre id="var-usage">Usage: (write msg)
-       (write {channel :channel} msg)
+  <pre id="var-usage">Usage: (write message)
+       (write connection message)
 </pre>
-  <pre id="var-docstr">Write a message to the connection (dispatches :downstream).  Writes to the 
-thread-bound *connection* if none is supplied</pre>
-  
+  <pre id="var-docstr">Write a message to the connection, dispatching downstream function on the
+stack's handlers (last to first).  Writes to the thread-bound *connection* if 
+none is supplied</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine.clj#L42" id="var-source">Source</a>
+</div>
+<h2 id="namespace-name">saturnine.sample</h2>
+<pre id="namespace-docstr">Contains a few sample implementations to illustrate usage of the Saturnine 
+library</pre>
+<br />
+<div id="var-entry">
+  <hr />
+  <h2 id="saturnine.sample/Chat">Chat</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (Chat users)
+       (Chat users meta__5784__auto__ extmap__5785__auto__)
+</pre>
+  <pre id="var-docstr">This Handler uses a Ref as it's state;  this allows every connection to share
+state using Clojure's native concurrency library.  The connect and disconenct
+functions are used to keep a list of every active connection, so messages 
+from one client can be forwarded to all of the others.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine/sample.clj#L67" id="var-source">Source</a>
+</div><div id="var-entry">
+  <hr />
+  <h2 id="saturnine.sample/Sum">Sum</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (Sum sum)
+       (Sum sum meta__5784__auto__ extmap__5785__auto__)
+</pre>
+  <pre id="var-docstr">The Sum handler contains the cumulative sum state so far for single 
+connection.  When an upstream message is received, it is added to the sum, 
+written back to the client and then returned, thus updating the state for 
+future calls.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine/sample.clj#L14" id="var-source">Source</a>
+</div><div id="var-entry">
+  <hr />
+  <h2 id="saturnine.sample/chat-server">chat-server</h2>
+  <span id="var-type">var</span><br />
+  <pre id="var-usage"></pre>
+  <pre id="var-docstr">chat-server is a simple telnet multi-user chat room.  Every newline-delimited 
+string message that a client sends to the server will be prepended with that 
+client's IP and written to every other connected client.
+
+The initial value for the Chat handler in this case is set to a Ref - thus 
+each new connection that is made will share the same Ref in their handler 
+functions.  </pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine/sample.clj#L79" id="var-source">Source</a>
+</div><div id="var-entry">
+  <hr />
+  <h2 id="saturnine.sample/repl-server">repl-server</h2>
+  <span id="var-type">var</span><br />
+  <pre id="var-usage"></pre>
+  <pre id="var-docstr">A simple REPL server.  Uses only the built-in handlers:
+
+:string - emits strings at every new line
+:print  - logs each string as it is incoming, then again as it is outgoing
+:clj    - converts the strings to clojure forms and evals them (with read-string)
+:echo   - bounces the eval'd forms back down the stack</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine/sample.clj#L44" id="var-source">Source</a>
+</div><div id="var-entry">
+  <hr />
+  <h2 id="saturnine.sample/sum-server">sum-server</h2>
+  <span id="var-type">var</span><br />
+  <pre id="var-usage"></pre>
+  <pre id="var-docstr">Sum is a simple server that reads a stream of newline-delimited Integers and
+responds with the cumulative sum.  It is constructed of 3 handlers:
+
+:string - emits strings at every new line
+:clj    - calls read &amp; eval on each string, making "1" -&gt; 1, for example.
+Sum     - The custom handler contains the cumulative sum state so far for a
+          single connection.  Non-integers that are evalable will throw a
+          ClassCastException to the default handle, while unevalable ones 
+          will display a parse error in the :clj handler as well</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine/sample.clj#L24" id="var-source">Source</a>
+</div><div id="var-entry">
+  <hr />
+  <h2 id="saturnine.sample/write-all">write-all</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (write-all users msg)
+</pre>
+  <pre id="var-docstr">Helper method for the Chat handler, writes msg to every IP in sample.users,
+except the supplied ip.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/147f9dec30f04eba7e17c5735ca0468a503981cc/src/saturnine/sample.clj#L60" id="var-source">Source</a>
+</div>
+<h2 id="namespace-name">saturnine.xml</h2>
+<pre id="namespace-docstr">A custom, nonblocking, pull XML parser in pure clojure.  Don't get too 
+excited, though;  it comes with a few caveats:
+
+  - Does no validation; completely ignores schemas
+  - May choke on some characters
+  - May choke on some formations of whitespace, newlines, tabs ...
+  - Uglier than sin
+  - Slow, to boot!
+
+The good news is:  if you want to process streaming xml in Clojure without
+blocking, you have no choice!  saturnine.xml is the only game in town.</pre>
+<br />
+<div id="var-entry">
+  <hr />
+  <h2 id="saturnine.xml/parse">parse</h2>
+  <span id="var-type">multimethod</span><br />
+  <pre id="var-usage">No usage documentation available</pre>
+  <pre id="var-docstr">Parses a single character and returns a map with two entries:  :state 
+is the intermediate assemlby of the next element in the Stream, and :messages
+is a vector of any completed XML elements</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/515613f7aaa9723ceaed1e61e38ac2cd213d916c/src/saturnine/xml.clj#L37" id="var-source">Source</a>
 </div>
 
 
@@ -236,7 +369,7 @@ thread-bound *connection* if none is supplied</pre>
           </div>
 	</div>
 	<div id="foot">
-	  <div style="text-align: center;" id="copyright">No copyright info </div>
+	  <div style="text-align: center;" id="copyright">(c) 2009, Andrew Stein</div>
 	</div>
       </div>
       <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />

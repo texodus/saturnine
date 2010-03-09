@@ -11,7 +11,7 @@ simplicity in mind:
 - Sane defaults preferred over explicit configuration.
 
 - Common functionality built-in, including Handlers for Bytes, Strings,
-  (simple) streaming XML, HTTP, JSON, XMPP and Clojure forms.
+  (simple) streaming XML, JSON and Clojure forms (HTTP and XMPP coming soon!).
 
 - Event driven design with dead easy session state management.  Applications can
   be trivially run in blocking ("thread-per-connection") or nonblocking modes.
@@ -35,11 +35,20 @@ electricity.  Install Saturnine with:
 
 ... or your maven pom.xml ...
 
-     <dependency>
-       <groupId>saturnine</groupId>
-       <artifactId>saturnine</artifactId>
-       <version>0.1-SNAPSHOT</version>
-     </dependency>
+     <repositories>
+       <repository>
+         <id>clojars.org</id>
+         <url>http://clojars.org/repo</url>
+       </repository>
+     </repositories>
+
+     <dependencies>
+       <dependency>
+         <groupId>saturnine</groupId>
+         <artifactId>saturnine</artifactId>
+         <version>0.1-SNAPSHOT</version>
+       </dependency>
+     </dependencies>
 
 ... and add (:use 'saturnine) to your namespace declaration anywhere you want to
 use Saturnine.
@@ -79,12 +88,12 @@ this server, incoming data is processed in the following manner:
 7. :string - converts incoming Strings back into Bytes to send to the Connection
 
 
-Here's a slighlty more complex sum-calculating server that implements a 
+Here's a slighty more complex sum-calculating server that implements a 
 custom Handler:
 
     (defhandler Sum [sum]
       (upstream [msg] (let [new-sum (+ sum msg)]
-                        (send-down (str \"Sum is \" new-sum \"\\r\\n\"))
+                        (send-down (str "Sum is " new-sum "\r\n"))
                         (assoc this :sum new-sum))))  ;; You can use "this" to refer to the whole session-state
 
     (defserver sum-server 1234 :blocking :string :clj (Sum 0))

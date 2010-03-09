@@ -21,7 +21,7 @@
 ;;;; Util
 
 (defn- push
-  [#^::Element element]
+  [#^::XML element]
   {:state    element
    :messages [(into {} element)]}) 
 
@@ -32,13 +32,13 @@
 ;;;;
 ;;;; Character Parser
 
-(deftype Element [state tag qname attrs] clojure.lang.IPersistentMap)
+(deftype XML [state tag qname attrs] clojure.lang.IPersistentMap)
 
 (defmulti #^{:doc
   "Parses a single character and returns a map with two entries:  :state 
    is the intermediate assemlby of the next element in the Stream, and :messages
    is a vector of any completed XML elements"}             
-  parse (fn [#^::Element element #^Char x] (:state element)))
+  parse (fn [#^::XML element #^Char x] (:state element)))
 
 (defmethod parse nil                                          ; don't know the current state
   [element c]

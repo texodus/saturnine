@@ -54,30 +54,30 @@
   ([#^ClientBootstrap client host port]
      (do (log :debug (str "Opening connection to " host ":" port)) 
          (Connection nil 
-			      (.getPipeline client) 
-			      (.connect client (InetSocketAddress. host port))))))
+                     (.getPipeline client) 
+                     (.connect client (InetSocketAddress. host port))))))
 
-(defn send-up 
+(defn send-up
   "Sends a message upstream to the next handler in the stack.  Requires a 
    thread-bound *connection*"
   [msg] {:pre [*connection*]}
-  (send-up-internal msg))
+  (.sendUpstream (:context *connection*) (new-upstream (:channel *connection*) msg)))
 
 (defn send-down
   "Sends a message downstream to the previous handler in the stack.  Requires a 
    thread-bound *connection*"
   [msg] {:pre [*connection*]}
-  (send-down-internal msg))
+  (.sendDownstream (:context *connection*) (new-downstream (:channel *connection*) msg)))
 
 (defn start-tls 
   "Convert the connection to SSL in STARTTLS mode (ignoring the first message if
    this is a server stack).  Requires a :starttls handler in the server or 
    client's definition"
-  ([] {:pre [*connection* (.get (:pipeline *connection*) "ssl")]}
+  ([] {:pre [*connection* (.get (-> *connection* :context .getPipeline) "ssl")]}
      (start-tls *connection*))
   ([{#^ChannelPipeline pipeline :pipeline}] {:pre [(.get pipeline "ssl")]}
-     (let [{pipeline :pipeline channel :channel} *connection*
-	   handler (.get pipeline "ssl")]
+     (let [{context :context channel :channel} *connection*
+	   handler (.get (.getPipeline context) "ssl")]
        (log :debug (str "Starting SSL Handshake for " (.getRemoteAddress channel)))
        (.. handler 
 	   (handshake channel)
@@ -116,29 +116,44 @@
 
 (defmacro defhandler 
    "This macro allows the user to define Handlers for a server.  Each handler
-   represents the intermediate state of a single connection, and is structured
-   like a datatype that implements a single protocol (Handler), though each 
-   function implementation is optional and will be substituted for the default 
-   implementation if missing.  Each function defined should return the new state
-   of the connection (returning nil leaves the state unmodified), and optionally 
-   pass new messages to the other handlers in the pipeline (via send-up or 
-   send-down, which are automatically called for default implementations)."
+    represents the intermediate state of a single connection, and is structured
+    like a datatype that implements a single protocol (Handler), though each 
+    function implementation is optional and will be substituted for the default 
+    implementation if missing.  Each function defined should return the new state
+    of the connection (returning nil leaves the state unmodified), and optionally 
+    pass new messages to the other handlers in the pipeline (via send-up or 
+    send-down, which are automatically called for default implementations).  The
+    handle functions you can define are:
+
+      (connect [] ...)       ; Called when a new connection is made; this 
+                               message is always sent upstream, no need to do so 
+                               yourself, even if you override the default.
+      (disconnect [] ...)    ; Called when a connection is closed; always sent
+                               upstream.
+      (upstream [msg] ...)   ; Called when a new message is dispatched upstream 
+                               from the previous Handler.  Defaults to send-up,
+                               but you must do this yourself if you implement this 
+                               function!
+      (downstream [msg] ...) ; Called when a new message is dispatched downstream 
+                               from the next Handler.  Same as upstream, in reverse
+      (error [msg] ...)      ; Called when an exception is thrown uncaught from 
+                               this handler.  Defaults to logging the exception."
   [name args & handles]
   (let [syms (into #{} (map first handles))
 	defaults ['(connect [] this) 
 		  '(disconnect [] nil) 
-		  '(upstream [msg] (saturnine.internal/send-up-internal msg)) 
-		  '(downstream [msg] (saturnine.internal/send-down-internal msg))
+		  '(upstream [msg] (saturnine/send-up msg)) 
+		  '(downstream [msg] (saturnine/send-down msg))
                   '(error [msg] (do (clojure.contrib.logging/log :error msg)
                                     (doseq [el (:stacktrace msg)]
                                       (clojure.contrib.logging/log :error el))))]]
     `(deftype ~name ~args :as ~'this
        ~'clojure.lang.IPersistentMap
        Handler ~@handles
-                        ~@(filter identity 
-				  (for [form defaults]
-				    (if (not (syms (first form)))
-				      form))))))
+               ~@(filter identity 
+			 (for [form defaults]
+			   (if (not (syms (first form)))
+			     form))))))
 
 (defmacro defserver
   {:doc "This macro allows the user to define a server instance.  You must call 

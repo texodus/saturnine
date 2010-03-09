@@ -61,8 +61,8 @@
   "Helper method for the Chat handler, writes msg to every IP in sample.users,
    except the supplied ip."
   [users msg]
-  (doseq [user (vals (dissoc users (ip)))] 
-    (write user msg)))
+  (doseq [user (vals (dissoc users (ip)))]
+    (write user (str (ip) " : " msg))))
 
 (defhandler #^{:doc
   "This Handler uses a Ref as it's state;  this allows every connection to share
@@ -84,7 +84,7 @@
    The initial value for the Chat handler in this case is set to a Ref - thus 
    each new connection that is made will share the same Ref in their handler 
    functions.  "}
-  chat-server 3333 :string (Chat (ref {})))
+  chat-server 3333 :string :print (Chat (ref {})))
 
 
 

@@ -15,9 +15,11 @@
            [org.jboss.netty.handler.codec.string StringEncoder StringDecoder]
 	   [org.jboss.netty.handler.ssl SslHandler])
   (:require [clojure.contrib.str-utils2 :as string]
+	    [clojure.contrib.json.read :as jsonr]
+	    [clojure.contrib.json.write :as jsonw]
+	    [saturnine.xml :as xml]
             [clojure.contrib.logging :as logging])
-  (:use [clojure.contrib.logging :only [log]]
-	[saturnine.xml]))
+  (:use [clojure.contrib.logging :only [log]]))
 
 
 
@@ -31,7 +33,7 @@
 
 (deftype Client [#^ClientBootstrap client handlers])
 
-(deftype Connection [#^ChannelPipeline pipeline #^ChannelHandlerContext context #^Channel channel])
+(deftype Connection [#^ChannelHandlerContext context #^Channel channel])
 
 (defprotocol Handler
   (upstream   [x msg] "Handle a received message") 
@@ -78,9 +80,14 @@
 
 (def *connection* nil)
 
-(def *event* nil)
-
 (def *ip* nil)
+
+(defmacro wrap
+  [ctx event f]
+  `(binding [*connection* (Connection ~ctx (.getChannel ~event))
+             *ip*         (.. ~event ~'getChannel ~'getRemoteAddress)
+             log          log-ip]
+     ~f))
 
 (defn log-ip
   [& args]
@@ -88,76 +95,58 @@
 
 (defn messageReceived
   [ctx event handlers]
-  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
-	    *ip*         (.. event getChannel getRemoteAddress)
-            *event*      event
-	    log          log-ip]
-    (let [new-state (upstream (@handlers *ip*) (. event getMessage))]
-      (if (not (nil? new-state))
-	(dosync (alter handlers assoc *ip* new-state))))))
+  (wrap ctx event 
+        (let [new-state (upstream (@handlers *ip*) (. event getMessage))]
+          (if (not (nil? new-state))
+            (dosync (alter handlers assoc *ip* new-state))))))
 
 (defn writeRequested
   [ctx event handlers]
-  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
-	    *ip*         (.. event getChannel getRemoteAddress)
-            *event*      event
-	    log          log-ip]
-    (let [new-state (downstream (@handlers *ip*) (.getMessage event))]
-      (if (not (nil? new-state))
-	(dosync (alter handlers assoc *ip* new-state))))))
+  (wrap ctx event 
+        (let [new-state (downstream (@handlers *ip*) (.getMessage event))]
+          (if (not (nil? new-state))
+            (dosync (alter handlers assoc *ip* new-state))))))
 
 (defn channelConnected
   [master ctx event handlers]
-  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
-	    *ip*         (.. event getChannel getRemoteAddress)
-            *event*      event
-	    log          log-ip]
-    (do (let [new-state (connect master)]
-	  (if new-state (dosync (alter handlers assoc *ip* new-state)))
-	  (.sendUpstream ctx event)))))
+  (wrap ctx event 
+        (do (let [new-state (connect master)]
+	      (dosync (alter handlers assoc *ip* (if (nil? new-state) master new-state)))
+              (.sendUpstream ctx event)))))
 
 (defn channelDisconnected
   [ctx event handlers]
-  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
-	    *ip*         (.. event getChannel getRemoteAddress)
-            *event*      event
-	    log          log-ip]
-    (do (disconnect (@handlers *ip*))
-	(dosync (alter handlers dissoc *ip*))
-	(.sendUpstream ctx event))))
+  (wrap ctx event 
+        (do (disconnect (@handlers *ip*))
+            (dosync (alter handlers dissoc *ip*))
+            (.sendUpstream ctx event))))
 
 (defn exception
   [ctx event handlers]
-  (binding [*connection* (Connection (.getPipeline ctx) ctx (.getChannel event))
-	    *ip*         (.. event getChannel getRemoteAddress)
-            *event*      event
-	    log          log-ip]
-    (do (let [new-state (error (@handlers *ip*) (bean (.getCause event)))]
-	  (if new-state (dosync (alter handlers assoc *ip* new-state)))))))
+  (wrap ctx event 
+        (do (let [new-state (error (@handlers *ip*) (bean (.getCause event)))]
+              (if new-state (dosync (alter handlers assoc *ip* new-state)))))))
 
 (defn get-channel-handler
-  [#^::Handler master #^::Server server] 
+  [#^::Handler master] 
   (let [handlers (ref {})]
     (proxy [SimpleChannelHandler] []
       (messageReceived     [ctx event] (messageReceived ctx event handlers))
       (writeRequested      [ctx event] (writeRequested ctx event handlers))
       (channelConnected    [ctx event] (channelConnected master ctx event handlers))
       (channelDisconnected [ctx event] (channelDisconnected ctx event handlers))
-    #_(exceptionCaught     [ctx event] (exception ctx event handlers)))))
+      (exceptionCaught     [ctx event] (exception ctx event handlers)))))
 
-(defn send-up-internal
-  [msg]
-  (let [{channel :channel context :context} *connection*
-        ip (.getRemoteAddress channel)]
-    (.sendUpstream context (UpstreamMessageEvent. channel msg ip))))
+(defn new-upstream
+  [channel msg]
+  (UpstreamMessageEvent. channel msg (.getRemoteAddress channel)))
 
-(defn send-down-internal
-  [msg] 
-  (let [{channel :channel context :context} *connection*] 
-    (.sendDownstream context (DownstreamMessageEvent. (.getChannel *event*) 
-						      (.getFuture *event*) ;(Channels/future channel)
-						      msg 
-						      (.. *event* getChannel getRemoteAddress)))))
+(defn new-downstream
+  [channel msg] 
+  (DownstreamMessageEvent. channel 
+			   (Channels/future channel)
+			   msg 
+			   (.getRemoteAddress channel)))
 
 
 
@@ -169,6 +158,8 @@
 ;;;;
 ;;;; Built-in Handlers
 
+;;;; Stateless
+
 (def echo-handler
      (proxy [SimpleChannelHandler] []
        (writeRequested [ctx event] (.sendDownstream ctx event))
@@ -176,25 +167,19 @@
        (connect [ctx event] nil)
        (disconnect [ctx event] nil)))
 
-
-(def clj-handler
+(def json-handler
      (proxy [SimpleChannelHandler] []
-       (messageReceived [ctx event] (let [result (try (eval (read-string (.getMessage event)))
-                                                      (catch Exception e nil))]
-                                      (.sendUpstream ctx 
-                                                     (UpstreamMessageEvent. (.getChannel event) 
-                                                                            (if result 
-                                                                              result
-                                                                              (do (log :error (str (.. event getChannel getRemoteAddress) " Parse Error"))
-                                                                                  "nil"))
-                                                                            (.getRemoteAddress (.getChannel event))))))
-       (writeRequested  [ctx event] (do (.sendDownstream ctx
-							 (DownstreamMessageEvent. (.getChannel event)
-										  (.getFuture event)
-										  (str (print-str (.getMessage event)) "\r\n")
-										  (.getRemoteAddress (.getChannel event))))))
+       (writeRequested 
+	[ctx event] 
+	(.sendDownstream ctx (new-downstream (.getChannel event)
+					     (str (jsonw/json-str (.getMessage event)) "\r\n"))))
+       (messageReceived 
+	[ctx event] 
+	(.sendUpstream ctx (new-upstream (.getChannel event)
+					 (jsonr/read-json (.getMessage event)))))
        (connect [ctx event] nil)
        (disconnect [ctx event] nil)))
+
 
 (def print-handler
      (proxy [SimpleChannelHandler] []
@@ -211,19 +196,32 @@
        (connect [ctx event] nil)
        (disconnect [ctx event] nil)))
 
-;; TODO Refactor this to fucking make sense
+;;;; Stateful
+
+;; TODO Should be a stateful handler that dispatches on newlines or spaces when paren
+;;   nesting level is 0 AND content is buffered
+(def clj-handler
+     (proxy [SimpleChannelHandler] []
+       (messageReceived [ctx event] (let [result (try (eval (read-string (.getMessage event)))
+                                                      (catch Exception e nil))]
+                                      (.sendUpstream ctx (new-upstream (.getChannel event) 
+								       (if result result "nil")))))
+       (writeRequested  [ctx event] (do (.sendDownstream ctx (new-downstream (.getChannel event) 
+									     (str (print-str (.getMessage event)) "\r\n")))))
+       (connect [ctx event] nil)
+       (disconnect [ctx event] nil)))
 
 ;; (deftype XML [] 
 ;;   Handler (connect    []    (xml/Element nil nil nil []))
 ;;           (disconnect []    nil)
-;; 	  (downstream [msg] (send-down state msg))
+;; 	  (downstream [msg] (.sendDownstream (:context *connection* state msg))
 ;; 	  (upstream   [msg] (loop [tokens (rest msg) 
-;;                                    {next-state :state messages :messages} (xml/parse state (first msg))]
-;;                               (doseq [msg messages] (send-up state msg))
-;;                               (if (not (empty? tokens))
-;;                                 (recur (rest tokens)
-;;                                        (xml/parse next-state (first tokens)))
-;;                                 next-state))))
+;; 				   {next-state :state messages :messages} (xml/parse state (first msg))]
+;; 			      (doseq [msg messages] (send-up state msg))
+;; 			      (if (not (empty? tokens))
+;; 				(recur (rest tokens)
+;; 				       (xml/parse next-state (first tokens)))
+;; 				next-state))))
 
 
 
@@ -235,7 +233,13 @@
 ;;;;
 ;;;; Startup
 
-; TODO add DelimiterBasedFrameDecoder
+(InternalLoggerFactory/setDefaultFactory 
+ (condp = logging/*impl-name*
+   "org.apache.log4j"           (Log4JLoggerFactory.)
+   "java.util.logging"          (JdkLoggerFactory.)
+   "org.apache.commons.logging" (CommonsLoggerFactory.)))
+
+; TODO add DelimiterBasedFrameDecoder (only for string, only applicable to Windows)
 ; TODO modify for use with client startup sequence
 ; TODO make options configurable
 (defn start-helper
@@ -249,20 +253,22 @@
 			       :clj    (doto pipeline
 					 (.addLast "clojure" clj-handler))
 			       :print  (.addLast pipeline "print" print-handler)
-			       :echo   (.addLast pipeline "echo" echo-handler))
+			       :echo   (.addLast pipeline "echo" echo-handler)
 		       ;       :http   (doto pipeline
 		       ;		 (.addLast "decoder" (HttpRequestDecoder.))
 		       ;		 (.addLast "encoder" (HttpRequestEncoder.))
 		       ;		 (.addLast "aggregator" (HttpChunkAggregator. 65536))
 		       ;		 (.addLast "chunkedWriter" (ChunkedWriteHandler.))))
 		       ;       :xml    (.addLast pipeline "xml" xml-handler)
-		       ;       :json   (.addLast pipeline "json" json-handler))
-		(vector? s)    (condp = (first s)
-                                 :ssl      (.addLast pipeline "ssl" (get-ssl-handler (apply get-ssl-context (rest s)) false false))
-				 :starttls (.addLast pipeline "ssl" (get-ssl-handler (apply get-ssl-context (rest s)) false true)))
+		               :json   (.addLast pipeline "json" json-handler))
+		(vector? s)    (.addLast pipeline "ssl" 
+                                         (get-ssl-handler (apply get-ssl-context (rest s)) false 
+                                                          (condp = (first s)
+                                                            :ssl      false
+                                                            :starttls true)))
                 true           (do (.addLast pipeline 
                                              (str "handler_" (.toString s)) 
-                                             (get-channel-handler s server))))))
+                                             (get-channel-handler s))))))
       (.setOption bootstrap "child.tcpNoDelay" true)
       (.setOption bootstrap "child.keepAlive" true)
       (.setOption bootstrap "tcpNoDelay" true)
@@ -290,20 +296,11 @@
 	      (Executors/newCachedThreadPool)
 	      (Executors/newCachedThreadPool)))))
 
-;(defn init-logging
- ; []
-  (InternalLoggerFactory/setDefaultFactory 
-   (condp = logging/*impl-name*
-     "org.apache.log4j"           (Log4JLoggerFactory.)
-     "java.util.logging"          (JdkLoggerFactory.)
-     "org.apache.commons.logging" (CommonsLoggerFactory.)))
-
 (defn start-server
   [server] {:pre [server]}
-  (do ;(init-logging)
-      (.bind (start-helper server) (InetSocketAddress. (:port server)))
-      server))
+  (do (.bind (start-helper server) (InetSocketAddress. (:port server)))))
+     ; server))
 
 (defn start-client
-  [client] {:pre [false]}   ; TODO not implemented!
+  [client] 
   nil)

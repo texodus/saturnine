@@ -48,7 +48,7 @@
    :print  - logs each string as it is incoming, then again as it is outgoing
    :clj    - converts the strings to clojure forms and evals them (with read-string)
    :echo   - bounces the eval'd forms back down the stack"}
-  repl-server 2222 :string :print :clj :echo) 
+  repl-server 2222 :string :print :prompt :clj :echo) 
 
 
 

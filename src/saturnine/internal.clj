@@ -196,20 +196,28 @@
        (connect [ctx event] nil)
        (disconnect [ctx event] nil)))
 
+(def prompt-handler
+     (proxy [SimpleChannelHandler] []
+       (messageReceived  [ctx event] (.sendUpstream ctx event))
+       (writeRequested   [ctx event] (do (.sendDownstream ctx event)
+                                         (.sendDownstream ctx (new-downstream (.getChannel event) "=> "))))
+       (channelConnected [ctx event] (.sendDownstream ctx (new-downstream (.getChannel event) "=> ")))
+       (disconnect       [ctx event] nil)))
+
 ;;;; Stateful
 
 ;; TODO Should be a stateful handler that dispatches on newlines or spaces when paren
 ;;   nesting level is 0 AND content is buffered
 (def clj-handler
      (proxy [SimpleChannelHandler] []
+       (connect [ctx event] nil)
+       (disconnect [ctx event] nil)
        (messageReceived [ctx event] (let [result (try (eval (read-string (.getMessage event)))
                                                       (catch Exception e nil))]
-                                      (.sendUpstream ctx (new-upstream (.getChannel event) 
+                                       (.sendUpstream ctx (new-upstream (.getChannel event) 
 								       (if result result "nil")))))
-       (writeRequested  [ctx event] (do (.sendDownstream ctx (new-downstream (.getChannel event) 
-									     (str (print-str (.getMessage event)) "\r\n")))))
-       (connect [ctx event] nil)
-       (disconnect [ctx event] nil)))
+       (writeRequested  [ctx event] (.sendDownstream ctx (new-downstream (.getChannel event) 
+                                                                         (str (print-str (.getMessage event)) "\r\n"))))))
 
 ;; (deftype XML [] 
 ;;   Handler (connect    []    (xml/Element nil nil nil []))
@@ -260,7 +268,8 @@
 		       ;		 (.addLast "aggregator" (HttpChunkAggregator. 65536))
 		       ;		 (.addLast "chunkedWriter" (ChunkedWriteHandler.))))
 		       ;       :xml    (.addLast pipeline "xml" xml-handler)
-		               :json   (.addLast pipeline "json" json-handler))
+		               :json   (.addLast pipeline "json" json-handler)
+                               :prompt (.addLast pipeline "prompt" prompt-handler))
 		(vector? s)    (.addLast pipeline "ssl" 
                                          (get-ssl-handler (apply get-ssl-context (rest s)) false 
                                                           (condp = (first s)

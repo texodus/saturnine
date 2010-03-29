@@ -21,7 +21,7 @@
                     (send-down (str "Sum is " new-sum))
                     (assoc this :sum new-sum))))
 
-(defserver #^{:doc
+(defn start-sum-server 
   "Sum is a simple server that reads a stream of newline-delimited Integers and
    responds with the cumulative sum.  It is constructed of 3 handlers:
 
@@ -30,8 +30,9 @@
    Sum     - The custom handler contains the cumulative sum state so far for a
              single connection.  Non-integers that are evalable will throw a
              ClassCastException to the default handle, while unevalable ones 
-             will display a parse error in the :clj handler as well"}
-  sum-server 1234 :string :clj :print (Sum 0))
+             will display a parse error in the :clj handler as well"
+  []
+  (start-server 1234 :string :clj :print (Sum 0)))
 
 
 
@@ -41,14 +42,15 @@
 ;;;;
 ;;;; Repl
 
-(defserver #^{:doc
+(defn start-repl-server
   "A simple REPL server.  Uses only the built-in handlers:
 
    :string - emits strings at every new line
    :print  - logs each string as it is incoming, then again as it is outgoing
    :clj    - converts the strings to clojure forms and evals them (with read-string)
-   :echo   - bounces the eval'd forms back down the stack"}
-  repl-server 2222 :string :print :prompt :clj :echo) 
+   :echo   - bounces the eval'd forms back down the stack"
+  []
+  (start-server 2222 :string :print :prompt :clj :echo))
 
 
 
@@ -74,17 +76,18 @@
                   (write-all @users "User connected!\r\n")))
   (disconnect [] (do (dosync (alter users dissoc (ip)))
                      (write-all @users "User disconnected!\r\n")))
-  (upstream [msg] (write-all @users msg)))
+  (upstream [msg] (do (write-all @users msg))))
 
-(defserver #^{:doc
+(defn start-chat-server
   "chat-server is a simple telnet multi-user chat room.  Every newline-delimited 
    string message that a client sends to the server will be prepended with that 
    client's IP and written to every other connected client.
 
    The initial value for the Chat handler in this case is set to a Ref - thus 
    each new connection that is made will share the same Ref in their handler 
-   functions.  "}
-  chat-server 3333 :string :print (Chat (ref {})))
+   functions.  "
+  []
+  (start-server 3333 :string :print (Chat (ref {}))))
 
 
 

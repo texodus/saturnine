@@ -29,9 +29,9 @@
 ;;;;
 ;;;; Networking Protocols
 
-(deftype Server [#^ServerBootstrap server port handlers])
+(deftype Server [#^ServerBootstrap bootstrap channel])
 
-(deftype Client [#^ClientBootstrap client handlers])
+(deftype Client [#^ClientBootstrap bootstrap])
 
 (deftype Connection [#^ChannelHandlerContext context #^Channel channel])
 
@@ -80,52 +80,52 @@
 
 (def *connection* nil)
 
-(def *ip* nil)
-
 (defmacro wrap
   [ctx event f]
   `(binding [*connection* (Connection ~ctx (.getChannel ~event))
-             *ip*         (.. ~event ~'getChannel ~'getRemoteAddress)
-             log          log-ip]
-     ~f))
+	     log          log-ip]
+     (let [~'ip (.getRemoteAddress (:channel *connection*))]
+       ~f)))
 
 (defn log-ip
   [& args]
-  (log (first args) (str *ip* ":" (apply str (rest args)))))
+  (log (first args) (str (.getRemoteAddress (:channel *connection*)) ":" (apply str (rest args)))))
 
 (defn messageReceived
   [ctx event handlers]
   (wrap ctx event 
-        (let [new-state (upstream (@handlers *ip*) (. event getMessage))]
-          (if (not (nil? new-state))
-            (dosync (alter handlers assoc *ip* new-state))))))
+        (let [new-state (upstream (@handlers ip) (. event getMessage))]
+	  (if (not (nil? new-state))
+            (dosync (alter handlers assoc ip new-state))))))
 
+; TODO This funciton blocks on write if connection is unopened
 (defn writeRequested
   [ctx event handlers]
   (wrap ctx event 
-        (let [new-state (downstream (@handlers *ip*) (.getMessage event))]
+        (let [new-state (downstream (@handlers ip) (.getMessage event))]
           (if (not (nil? new-state))
-            (dosync (alter handlers assoc *ip* new-state))))))
+            (dosync (alter handlers assoc ip new-state))))))
 
 (defn channelConnected
   [master ctx event handlers]
   (wrap ctx event 
-        (do (let [new-state (connect master)]
-	      (dosync (alter handlers assoc *ip* (if (nil? new-state) master new-state)))
-              (.sendUpstream ctx event)))))
+	(let [new-state (connect master)]
+	  (dosync (alter handlers assoc 
+			 ip (if (nil? new-state) master new-state)))
+	  (.sendUpstream ctx event))))
 
 (defn channelDisconnected
   [ctx event handlers]
   (wrap ctx event 
-        (do (disconnect (@handlers *ip*))
-            (dosync (alter handlers dissoc *ip*))
+        (do (disconnect (@handlers ip))
+            (dosync (alter handlers dissoc ip))
             (.sendUpstream ctx event))))
 
 (defn exception
   [ctx event handlers]
   (wrap ctx event 
-        (do (let [new-state (error (@handlers *ip*) (bean (.getCause event)))]
-              (if new-state (dosync (alter handlers assoc *ip* new-state)))))))
+        (do (let [new-state (error (@handlers ip) (bean (.getCause event)))]
+              (if new-state (dosync (alter handlers assoc ip new-state)))))))
 
 (defn get-channel-handler
   [#^::Handler master] 
@@ -204,10 +204,6 @@
        (channelConnected [ctx event] (.sendDownstream ctx (new-downstream (.getChannel event) "=> ")))
        (disconnect       [ctx event] nil)))
 
-;;;; Stateful
-
-;; TODO Should be a stateful handler that dispatches on newlines or spaces when paren
-;;   nesting level is 0 AND content is buffered
 (def clj-handler
      (proxy [SimpleChannelHandler] []
        (connect [ctx event] nil)
@@ -217,6 +213,8 @@
                                        (.sendUpstream ctx (new-upstream (.getChannel event) 
 								       (if result result "nil")))))
        (writeRequested  [ctx event] (.sendDownstream ctx (new-downstream (.getChannel event) 
+
+;;;; Stateful
                                                                          (str (print-str (.getMessage event)) "\r\n"))))))
 
 ;; (deftype XML [] 
@@ -248,10 +246,9 @@
    "org.apache.commons.logging" (CommonsLoggerFactory.)))
 
 ; TODO add DelimiterBasedFrameDecoder (only for string, only applicable to Windows)
-; TODO modify for use with client startup sequence
 ; TODO make options configurable
 (defn start-helper
-  [{bootstrap :server handlers :handlers :as server}]
+  [bootstrap & handlers]
   (do (let [pipeline (. bootstrap getPipeline)]
 	(doseq [s handlers]
           (cond (keyword? s) (condp = s
@@ -305,11 +302,3 @@
 	      (Executors/newCachedThreadPool)
 	      (Executors/newCachedThreadPool)))))
 
-(defn start-server
-  [server] {:pre [server]}
-  (do (.bind (start-helper server) (InetSocketAddress. (:port server)))))
-     ; server))
-
-(defn start-client
-  [client] 
-  nil)

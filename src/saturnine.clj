@@ -28,7 +28,7 @@
 
 (defn #^{:doc "Thread-bound connection"} conn [] *connection*)
 
-(defn #^{:doc "Thread-bound ip address"} ip [] *ip*)
+(defn #^{:doc "Thread-bound ip address"} ip [] (.getRemoteAddress (:channel *connection*)))
 
 (defn close
   {:doc "Closes the connection and dispatches a disconnect to the handlers.  Closes 
@@ -39,23 +39,24 @@
   ([{#^Channel channel :channel}]   
      (do (.close channel) nil)))
 
+; TODO This (should?) block if the connection is not open for writes yet
 (defn write 
   {:doc "Write a message to the connection, dispatching downstream function on the
-         stack's handlers (last to first).  Writes to the thread-bound *connection* if 
-         none is supplied"
-   :arglists '([message] [connection message])}
+         stack's handlers (last to first)."
+   :arglists '([connection message])}
   ([msg] {:pre [*connection*]}
      (write *connection* msg))
   ([{#^Channel channel :channel} msg] 
-     (.write channel msg)))
+     (do (.write channel msg)
+	 nil)))
 
+; TODO This blocks, fix it with a callback
 (defn #^::Connection open 
   "Open a new Connection to a remote host and port; returns the new Connection"
-  ([#^ClientBootstrap client host port]
-     (do (log :debug (str "Opening connection to " host ":" port)) 
-         (Connection nil 
-                     (.getPipeline client) 
-                     (.connect client (InetSocketAddress. host port))))))
+  ([{bootstrap :bootstrap} host port]
+     (Connection nil 
+		 (let [fut (.connect bootstrap (InetSocketAddress. host port))]
+		   (.getChannel fut)))))
 
 (defn send-up
   "Sends a message upstream to the next handler in the stack.  Requires a 
@@ -69,14 +70,15 @@
   [msg] {:pre [*connection*]}
   (.sendDownstream (:context *connection*) (new-downstream (:channel *connection*) msg)))
 
+; TODO this blocks, fix it with a callback
 (defn start-tls 
   "Convert the connection to SSL in STARTTLS mode (ignoring the first message if
    this is a server stack).  Requires a :starttls handler in the server or 
    client's definition"
   ([] {:pre [*connection* (.get (-> *connection* :context .getPipeline) "ssl")]}
      (start-tls *connection*))
-  ([{#^ChannelPipeline pipeline :pipeline}] {:pre [(.get pipeline "ssl")]}
-     (let [{context :context channel :channel} *connection*
+  ([connection] 
+     (let [{context :context channel :channel} connection
 	   handler (.get (.getPipeline context) "ssl")]
        (log :debug (str "Starting SSL Handshake for " (.getRemoteAddress channel)))
        (.. handler 
@@ -92,27 +94,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;
-;;;; Server
-
-(defprotocol Bootstrap 
-  (start [x] "Initialize a Server or Client")
-  (stop  [x] "Stop a Server or Client"))
-
-(extend :saturnine.internal/Server 
-  Bootstrap {:start start-server
-	     :stop  (fn [{server :server}] (.unbind server))})
-
-(extend :saturnine.internal/Client
-  Bootstrap {:start start-client
-             :stop  (fn [_] nil)})
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;
-;;;; Definitions
+;;;; Server Definition
 
 (defmacro defhandler 
    "This macro allows the user to define Handlers for a server.  Each handler
@@ -155,9 +137,8 @@
 			   (if (not (syms (first form)))
 			     form))))))
 
-(defmacro defserver
-  {:doc "This macro allows the user to define a server instance.  You must call 
-         (start name) to start the server once it's been defined.  The only option
+(defn start-server
+  {:doc "Allows the user to define & start a server instance.  The only option
          available is :nonblocking or :blocking (not both), which configures the 
          server to use NIO.  In addition to Handlers you define yourself, defserver 
          accepts a few built in Handlers:
@@ -175,15 +156,23 @@
                        clojure.contrib.json)
            :http     - translates Bytes to HTTP Request objects"
    :arglists '([name port options? & handlers])}
-  [name port options & handlers]
+  [port options & handlers]
   (let [blocking (= options :blocking)
 	handlers (if (#{:blocking :nonblocking} options)
 		   handlers
-		   (cons options handlers))]
-    `(def ~name (Server (empty-server ~blocking) ~port ~(apply vector handlers)))))
+		   (cons options handlers))
+	bootstrap (apply (partial start-helper (empty-server blocking)) handlers)]
+    (Server bootstrap (.bind bootstrap (InetSocketAddress. port)))))
 
-(defmacro defclient
-  {:doc "This macro allows the user to define a client instance.  Once the 
+(defn stop-server
+  "Stops a Server instance, severs all spawnsed connections and deallcoates all
+   system resources."
+  [{bootstrap :bootstrap channel :channel}]
+  (do (.unbind channel)
+      (.releaseExternalResources bootstrap)))
+
+(defn start-client
+  {:doc "Allows the user to define & start a client instance.  Once the 
          client has been instantiated, you can create new connections with 
          (open client ip).  The only option available is :nonblocking or :blocking 
          (not both), which configures the client to use NIO.  In addition to Handlers 
@@ -202,9 +191,16 @@
                        clojure.contrib.json)
            :http     - translates Bytes to HTTP Response objects"
    :arglists '([name port options? & handlers])}
-  [name options & handlers]
+  [options & handlers]
   (let [blocking (= options :blocking)
 	handlers (if (#{:blocking :nonblocking} options)
 		   handlers
 		   (cons options handlers))]
-    `(def ~name (Client (empty-client ~blocking) ~(apply vector handlers)))))
+    (Client (apply (partial start-helper (empty-client blocking)) handlers))))
+
+(defn stop-client
+  "Deallocates a client stack's resources"
+  [{bootstrap :bootstrap}]
+  (.releaseExternalResources bootstrap))
+
+

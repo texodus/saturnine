@@ -85,7 +85,7 @@
 	   (handshake channel)
 	   (addListener (reify ChannelFutureListener
 			       (operationComplete 
-				[future]
+				[this future]
 				(log :debug (str "SSL Handshake finished : " (.isSuccess future))))))))))
 
 

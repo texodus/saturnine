@@ -107,10 +107,10 @@
     (stop-server server)))
 
 (defhandler client-handler [a]
-  (upstream [msg] (condp = msg 
-		    "=> "   (if (= @a nil) (write "(+ 1 2 3)"))
-		    "6\r\n" (swap! a (fn [_] :success))
-		    (swap! a (fn [_] :failure)))))
+  (upstream [this msg] (condp = msg
+			 "=> "   (if (= @a nil) (write "(+ 1 2 3)"))
+			 "6\r\n" (swap! a (fn [_] :success))
+			 (swap! a (fn [_] :failure)))))
 
 (deftest test-client
   (let [lock   (atom nil)

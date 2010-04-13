@@ -17,9 +17,9 @@
    written back to the client and then returned, thus updating the state for 
    future calls."}
   Sum [sum]
-  (upstream [msg] (let [new-sum (+ sum msg)]
-                    (send-down (str "Sum is " new-sum))
-                    (assoc this :sum new-sum))))
+  (upstream [this msg] (let [new-sum (+ sum msg)]
+			 (send-down (str "Sum is " new-sum))
+			 (assoc this :sum new-sum))))
 
 (defn start-sum-server 
   "Sum is a simple server that reads a stream of newline-delimited Integers and
@@ -72,11 +72,11 @@
    functions are used to keep a list of every active connection, so messages 
    from one client can be forwarded to all of the others."}
   Chat [users]
-  (connect [] (do (dosync (alter users assoc (ip) (conn)))
-                  (write-all @users "User connected!\r\n")))
-  (disconnect [] (do (dosync (alter users dissoc (ip)))
-                     (write-all @users "User disconnected!\r\n")))
-  (upstream [msg] (do (write-all @users msg))))
+  (connect [this] (do (dosync (alter users assoc (ip) (conn)))
+		      (write-all @users "User connected!\r\n")))
+  (disconnect [this] (do (dosync (alter users dissoc (ip)))
+			 (write-all @users "User disconnected!\r\n")))
+  (upstream [this msg] (do (write-all @users msg))))
 
 (defn start-chat-server
   "chat-server is a simple telnet multi-user chat room.  Every newline-delimited 

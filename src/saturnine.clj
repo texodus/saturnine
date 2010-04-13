@@ -122,17 +122,17 @@
                                this handler.  Defaults to logging the exception."
   [name args & handles]
   (let [syms (into #{} (map first handles))
-	defaults ['(connect [] this) 
-		  '(disconnect [] nil) 
-		  '(upstream [msg] (saturnine/send-up msg)) 
-		  '(downstream [msg] (saturnine/send-down msg))
-                  '(error [msg] (do (clojure.contrib.logging/log :error msg)
-                                    (doseq [el (:stacktrace msg)]
+	defaults ['(connect [this] this)
+		  '(disconnect [this] nil)
+		  '(upstream [this msg] (saturnine/send-up msg))
+		  '(downstream [this msg] (saturnine/send-down msg))
+                  '(error [this msg] (do (clojure.contrib.logging/log :error msg)
+					 (doseq [el (:stacktrace msg)]
                                       (clojure.contrib.logging/log :error el))))]]
-    `(deftype ~name ~args :as ~'this
+    `(deftype ~name ~args
        ~'clojure.lang.IPersistentMap
        Handler ~@handles
-               ~@(filter identity 
+               ~@(filter identity
 			 (for [form defaults]
 			   (if (not (syms (first form)))
 			     form))))))

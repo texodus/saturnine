@@ -32,11 +32,11 @@
 ;;;;
 ;;;; Networking Protocols
 
-(deftype Server [#^ServerBootstrap bootstrap channel])
+(defrecord Server [#^ServerBootstrap bootstrap channel])
 
-(deftype Client [#^ClientBootstrap bootstrap])
+(defrecord Client [#^ClientBootstrap bootstrap])
 
-(deftype Connection [#^ChannelHandlerContext context #^Channel channel])
+(defrecord Connection [#^ChannelHandlerContext context #^Channel channel])
 
 (defprotocol Handler
   (upstream   [x msg] "Handle a received message") 
@@ -85,10 +85,10 @@
 
 (defmacro wrap
   [ctx event f]
-  `(binding [*connection* (Connection ~ctx (.getChannel ~event))
+  `(binding [*connection* (new ~'saturnine.handler.internal.Connection ~ctx (.getChannel ~event))
 	     log          log-ip]
-     (let [~'ip (.getRemoteAddress (:channel *connection*))]
-       ~f)))
+      (let [~'ip (.getRemoteAddress (:channel *connection*))]
+        ~f)))
 
 (defn listen 
   ([#^ChannelFuture fut fun]
@@ -112,9 +112,9 @@
 
 (defn messageReceived
   [ctx event handlers]
-  (wrap ctx event 
+   (wrap ctx event 
         (let [new-state (upstream (@handlers ip) (. event getMessage))]
-	  (if (not (nil? new-state))
+           (if (not (nil? new-state))
             (dosync (alter handlers assoc ip new-state))))))
 
 ; TODO This function blocks on write if connection is unopened

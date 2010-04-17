@@ -45,12 +45,12 @@
 (defhandler Print []
   (upstream [this msg] (do (if (string? msg)
 			(doseq [line (string/split-lines msg)]
-			  (log :info (str (get-ip) " --> " line)))
+                           (log :info (str (get-ip) " --> " line)))
 			(log :info (str (get-ip) " --> " msg)))
 		      (send-up msg)))
   (downstream [this msg] (do (if (string? msg)
 			  (doseq [line (string/split-lines msg)]
-			    (log :info (str (get-ip) " <-- " line)))
+                            (log :info (str (get-ip) " <-- " line)))
 			  (log :info (str (get-ip) " <-- " msg)))
 			(send-down msg))))
 
@@ -59,9 +59,9 @@
   (downstream [this msg] (send-down (str msg "\r\n=> "))))
 
 (defhandler Clj []
-  (upstream [this msg] (send-up (let [result (try (eval (read-string msg))
-					     (catch Exception e nil))]
-			     (if result result "nil"))))
+  (upstream   [this msg] (send-up (let [result (try (eval (read-string msg))
+                                                    (catch Exception e nil))]
+                                    (if result result "nil"))))
   (downstream [this msg] (send-down (str (print-str msg) "\r\n"))))
 
 (def http-codes

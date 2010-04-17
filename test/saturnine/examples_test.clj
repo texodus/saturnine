@@ -122,7 +122,7 @@
 (defhandler client-handler [a]
   (upstream [this msg] (condp = msg 
                          "=> "   (if (= @a nil) (write "(+ 1 2 3)"))
-                         "6\r\n" (swap! a (fn [_] :success))
+                         "6\r\n=> " (swap! a (fn [_] :success))
                          (swap! a (fn [_] :failure)))))
 
 (deftest test-client

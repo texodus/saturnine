@@ -55,7 +55,7 @@
 		   handlers
 		   (cons options handlers))
 	bootstrap (apply (partial start-helper (empty-server blocking)) handlers)]
-    (new saturnine.handler.internal.Server bootstrap (.bind bootstrap (InetSocketAddress. port)))))
+     (new saturnine.handler.internal.Server bootstrap (.bind bootstrap (InetSocketAddress. port)))))
 
 (defn stop-server
   {:doc "Stops a Server instance, severs all spawned connections and deallocates all

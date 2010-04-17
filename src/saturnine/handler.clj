@@ -47,7 +47,7 @@
      (close *connection*))
   ([conn-or-fun]
      (if (= (type conn-or-fun)
-	    :saturnine.handler.internal/Connection)
+	    saturnine.handler.internal.Connection)
        (do (.close (:channel conn-or-fun)) nil)
        (close *connection* conn-or-fun)))
   ([{#^Channel channel :channel} fun] {:pre [channel]}
@@ -63,7 +63,7 @@
      (write *connection* msg))
   ([conn-or-fun msg] 
      (if (= (type conn-or-fun)
-	    :saturnine.handler.internal/Connection)
+	    saturnine.handler.internal.Connection)
        (do (.write (:channel conn-or-fun) msg) nil)
        (write *connection* conn-or-fun msg)))
   ([{#^Channel channel :channel} fun msg] {:pre [channel]}
@@ -75,14 +75,18 @@
          completion."
    :arglists '([client fun? host port])}
   ([{bootstrap :bootstrap} host port]
-     (new saturnine.handler.internal.Connection nil (.. bootstrap 
-			 (connect (InetSocketAddress. host port)) 
-			 getChannel)))
+     (new saturnine.handler.internal.Connection 
+          nil
+          (.. bootstrap 
+              (connect (InetSocketAddress. host port)) 
+              getChannel)))
   ([{bootstrap :bootstrap} fun host port] {:pre [bootstrap]}
-     (new saturnine.handler.internal.Connection nil (let [fut (.connect bootstrap 
-					 (InetSocketAddress. host port))]
-		       (listen fut fun)
-		       (.getChannel fut)))))
+     (new saturnine.handler.internal.Connection 
+          nil 
+          (let [fut (.connect bootstrap 
+                              (InetSocketAddress. host port))]
+            (listen fut fun)
+            (.getChannel fut)))))
 
 (defn send-up
   "Sends a message upstream to the next handler in the stack.  Requires a 
@@ -110,7 +114,7 @@
      (start-tls *connection*))
   ([conn-or-fun]
      (if (= (type conn-or-fun)
-	    :saturnine.handler.internal/Connection)
+	    saturnine.handler.internal.Connection)
        (start-tls conn-or-fun #(do nil))
        (start-tls *connection* conn-or-fun)))
   ([connection fun] {:pre [connection]}
@@ -161,8 +165,7 @@
                   '(error [this msg] (do (clojure.contrib.logging/log :error msg)
                                     (doseq [el (:stacktrace msg)]
                                       (clojure.contrib.logging/log :error el))))]]
-    `(deftype ~name ~args
-       ~'clojure.lang.IPersistentMap
+    `(defrecord ~name ~args
        Handler ~@handles
                ~@(filter identity 
 			 (for [form defaults]

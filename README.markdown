@@ -11,9 +11,9 @@ simplicity in mind:
 - Sane defaults preferred over explicit configuration.
 
 - Common functionality built-in, including Handlers for Bytes, Strings,
-  (simple) streaming XML, JSON and Clojure forms (HTTP and XMPP coming soon!).
+  (simple, tagsoup style) streaming XML, JSON, HTTP and Clojure forms
 
-- Event driven design with dead easy session state management.  Applications can
+- Event driven design with easy session state management.  Applications can
   be trivially run in blocking ("thread-per-connection") or nonblocking modes.
 
 - SSL/TLS support (with starttls), also supports nonblocking operation.
@@ -31,7 +31,7 @@ electricity.  Install Saturnine with:
 
 ... or add it to your leiningen `project.clj` ...
 
-     :dependencies [[saturnine "0.1-SNAPSHOT"]]
+     :dependencies [[saturnine "0.2"]]
 
 ... or your maven pom.xml ...
 
@@ -46,7 +46,7 @@ electricity.  Install Saturnine with:
        <dependency>
          <groupId>saturnine</groupId>
          <artifactId>saturnine</artifactId>
-         <version>0.1-SNAPSHOT</version>
+         <version>0.2</version>
        </dependency>
      </dependencies>
 
@@ -57,13 +57,14 @@ use Saturnine.
 
 Saturnine applications are composed of Handlers - datatypes that represent the
 processing state of received IO events from a network connection.  When a 
-server is defined (with the defserver macro), the user must supply a name and
-port #, followed by a list of Handlers (or keys for default handlers).  Here's
+server is defined (with the start-server function), the user must supply a 
+port #, followed by a list of Handlers (or keys for default handlers) that 
+define the processing stack for incoming messages.  Here's
 a simple REPL server that only uses default handlers:
 
-    (defserver repl-server 1234 :nonblocking :string :print :clj :echo)
+    (use 'saturnine)
 
-    (start repl-server)
+    (start-server 1234 :nonblocking :string :print :clj :echo)
 
 This starts a server listening on port 1234.  Once a connection is opened to
 this server, incoming data is processed in the following manner:
@@ -91,14 +92,14 @@ this server, incoming data is processed in the following manner:
 Here's a slighty more complex sum-calculating server that implements a 
 custom Handler:
 
+    (use 'saturnine 'saturnine.handler)
+
     (defhandler Sum [sum]
-      (upstream [msg] (let [new-sum (+ sum msg)]
-                        (send-down (str "Sum is " new-sum "\r\n"))
-                        (assoc this :sum new-sum))))  ;; You can use "this" to refer to the whole session-state
+      (upstream [this msg] (let [new-sum (+ sum msg)]
+                             (send-down (str "Sum is " new-sum "\r\n"))
+                             (assoc this :sum new-sum))))  ; You can use "this" to refer to the whole session-state
 
-    (defserver sum-server 1234 :blocking :string :clj (Sum 0))
-
-    (start sum-server)
+    (start-server 1234 :blocking :string :clj (Sum 0))
 
 By declaring sum-server to process messages flushed from :clj with the value
 (Sum 0), we are telling Saturnine to assign new Connections this state.  When
@@ -108,7 +109,8 @@ function, then returns a new Sum, which becomes the new state of the connection,
 and will be called on all future messages from this connection that are flushed
 from :clj.
 
-For further examples, please see the [API Documentation](http://texodus.github.com/saturnine) and ['sample](http://github.com/texodus/saturnine/tree/master/src/saturnine/sample.clj) namespace.
+For further examples, please see the [API Documentation](http://texodus.github.com/saturnine) and 
+['saturnine.examples](http://github.com/texodus/saturnine/tree/master/src/saturnine/examples.clj) namespace.
 
 
 
@@ -116,17 +118,17 @@ For further examples, please see the [API Documentation](http://texodus.github.c
 
 ### Planned Features ###
 
+Next Release (v0.3)
+
 - UDP support
+- XMPP Handler
 - Optimization 
     - Replace SimpleChannelHandler with reified ChannelHandler
     - Add support for zero-copy ChannelBuffer manipulation
 - Additional Handler optional message endpoints - bind, open, etc.
-- Better startup/shutdown support - add functions to forcefully close all child
-  connections, share threadpools & SSLContexts, etc.
-- Expose ChannelFutures through some unified callback interface - to assist in
-  developing Client protocols with the same handlers.
-- Better Http support, wrap netty http object in Clojure maps (or, provide
-  ring implementation)
-- Change :clj handler to work across newlines
+- Better HTTP support in the form of a ring adapter.
+- Open to suggestions ....
+
+
 
     

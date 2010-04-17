@@ -1,7 +1,8 @@
-(ns saturnine.sample
+(ns saturnine.examples
   "Contains a few sample implementations to illustrate usage of the Saturnine 
    library"
-  (:use [saturnine]))
+  (:use [saturnine]
+	[saturnine.handler]))
 
 
 
@@ -18,8 +19,8 @@
    future calls."}
   Sum [sum]
   (upstream [this msg] (let [new-sum (+ sum msg)]
-			 (send-down (str "Sum is " new-sum))
-			 (assoc this :sum new-sum))))
+                         (send-down (str "Sum is " new-sum))
+                         (assoc this :sum new-sum))))
 
 (defn start-sum-server 
   "Sum is a simple server that reads a stream of newline-delimited Integers and
@@ -32,7 +33,7 @@
              ClassCastException to the default handle, while unevalable ones 
              will display a parse error in the :clj handler as well"
   []
-  (start-server 1234 :string :clj :print (Sum 0)))
+  (start-server 1234 :string :clj :print (new Sum 0)))
 
 
 
@@ -42,6 +43,11 @@
 ;;;;
 ;;;; Repl
 
+(defhandler Prompt []
+  (connect    [_]    (send-down "=> "))
+  (downstream [_ msg] (do (send-down msg)
+			(send-down "=> "))))
+
 (defn start-repl-server
   "A simple REPL server.  Uses only the built-in handlers:
 
@@ -50,7 +56,8 @@
    :clj    - converts the strings to clojure forms and evals them (with read-string)
    :echo   - bounces the eval'd forms back down the stack"
   []
-  (start-server 2222 :string :print :prompt :clj :echo))
+  (start-server 2222 :string :print (new Prompt) :clj :echo))
+
 
 
 
@@ -63,8 +70,8 @@
   "Helper method for the Chat handler, writes msg to every IP in sample.users,
    except the supplied ip."
   [users msg]
-  (doseq [user (vals (dissoc users (ip)))]
-    (write user (str (ip) " : " msg))))
+  (doseq [user (vals (dissoc users (get-ip)))]
+    (write user (str (get-ip) " : " msg))))
 
 (defhandler #^{:doc
   "This Handler uses a Ref as it's state;  this allows every connection to share
@@ -72,11 +79,11 @@
    functions are used to keep a list of every active connection, so messages 
    from one client can be forwarded to all of the others."}
   Chat [users]
-  (connect [this] (do (dosync (alter users assoc (ip) (conn)))
-		      (write-all @users "User connected!\r\n")))
-  (disconnect [this] (do (dosync (alter users dissoc (ip)))
-			 (write-all @users "User disconnected!\r\n")))
-  (upstream [this msg] (do (write-all @users msg))))
+  (connect    [_] (do (dosync (alter users assoc (get-ip) (get-connection)))
+                      (write-all @users "User connected!\r\n")))
+  (disconnect [_] (do (dosync (alter users dissoc (get-ip)))
+                      (write-all @users "User disconnected!\r\n")))
+  (upstream   [_ msg] (do (write-all @users msg))))
 
 (defn start-chat-server
   "chat-server is a simple telnet multi-user chat room.  Every newline-delimited 
@@ -87,7 +94,7 @@
    each new connection that is made will share the same Ref in their handler 
    functions.  "
   []
-  (start-server 3333 :string :print (Chat (ref {}))))
+  (start-server 3333 :string :print (new Chat (ref {}))))
 
 
 

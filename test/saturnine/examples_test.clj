@@ -1,10 +1,11 @@
-(ns saturnine.sample-test
+(ns saturnine.examples-test
   (:import [java.net Socket]
 	   [java.io InputStreamReader OutputStreamWriter BufferedReader BufferedWriter]
 	   [clojure.lang LineNumberingPushbackReader])
   (:use [clojure.test]
-        [saturnine.sample]
-        [saturnine]))
+        [saturnine.examples]
+        [saturnine]
+	[saturnine.handler]))
 
 
 
@@ -13,7 +14,7 @@
 ;;;; Test Utils
 
 (defn new-sock [port] 
-  (doto (Socket. "localhost" port) (.setSoTimeout 3000)))
+  (doto (Socket. "localhost" port) (.setSoTimeout 10000)))
 
 (defn new-read [sock]
   (let [in (new BufferedReader 
@@ -106,16 +107,28 @@
     (.close socket)
     (stop-server server)))
 
+(deftest test-xml-server
+  (let [server (start-server 1111 :string :print :xml :echo)
+	socket (new-sock 1111)
+	write  (new-write socket)
+	read   (new-read socket)]
+    (write "<test>HELLO</test>")
+    (is (= "<test>" (read)))
+    (is (= "HELLO" (read)))
+    (is (= "</test>" (read)))
+    (.close socket)
+    (stop-server server)))
+
 (defhandler client-handler [a]
-  (upstream [this msg] (condp = msg
-			 "=> "   (if (= @a nil) (write "(+ 1 2 3)"))
-			 "6\r\n" (swap! a (fn [_] :success))
-			 (swap! a (fn [_] :failure)))))
+  (upstream [this msg] (condp = msg 
+                         "=> "   (if (= @a nil) (write "(+ 1 2 3)"))
+                         "6\r\n" (swap! a (fn [_] :success))
+                         (swap! a (fn [_] :failure)))))
 
 (deftest test-client
   (let [lock   (atom nil)
 	server (start-repl-server)
-	client (start-client :blocking :string (client-handler lock))
+	client (start-client :blocking :string (new client-handler lock))
 	chan   (open client "localhost" 2222)]
     (loop [result @lock]      ; Have to make the test block here until the async handler gets a result
       (do (Thread/sleep 100)

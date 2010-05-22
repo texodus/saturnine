@@ -1,0 +1,226 @@
+<html>
+  <head>
+    <title>saturnine.handler API reference (Saturnine)</title>
+    <link href="static/favicon.png" rel="icon" />
+    <link href="static/favicon.png" rel="shortcut icon" />
+    <link media="all" type="text/css" href="static/clojure.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/wiki.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/internal.css" rel="stylesheet" />
+    <!-- TODO: are we using these (from clojure.org)? If so, add the files -->
+    <script src="file/view/code_highlighter.js" type="text/javascript"></script>
+    <script src="file/view/clojure.js" type="text/javascript"></script>
+    <style>.menuWrapper{height: 36px;}</style>
+    <!--[if lte IE 6]>
+    <link rel="stylesheet" href="http://www.wikispaces.com/_/2009051601/s/internal_ie.css" type="text/css" />
+    <![endif]-->
+  </head>
+<!--
+This document was auto-generated from the source by the clojure autodoc system.
+To report errors or ask questions about the overall documentation structure, formatting,
+etc., contact Tom Faulhaber (google mail name: tomfaulhaber).
+For errors in the documentation of a particular namespace, contact the author of that
+namespace.
+-->
+  <body>
+    <div id="AllContentContainer">
+      <div id="Header">
+	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
+	<h1><a title="page header title" id="page-header" href="index.html">API Documentation</a></h1>
+      </div>
+      <div id="leftcolumn"><div style="text-align: center;"></div>
+<div class="menu">
+  <div class="WikiCustomNav WikiElement wiki">
+    <a class="wiki_link" href="index.html">Overview</a><br />
+    <a class="wiki_link" href="api-index.html">API Index</a><br />
+    <a class="wiki_link" href="#">Namespaces:</a>
+    <ul id="left-sidebar-list">
+      <li><a href="saturnine.core-api.html" class="wiki_link">saturnine.core</a></li><li><a href="saturnine.examples-api.html" class="wiki_link">saturnine.examples</a></li><li><a href="saturnine.handler-api.html" class="wiki_link">saturnine.handler</a></li>
+    </ul>
+  </div>
+</div>
+</div>
+      <div id="rightcolumn">
+	<div id="Content">
+	  <div class="contentBox"><div class="innerContentBox">
+              <div id="content_view" class="wiki wikiPage">
+                <div id="right-sidebar"><div id="toc">
+  <h1 class="nopad">Table of Contents</h1>
+  <div style="margin-left: 1em;" class="toc-section">
+    <a href="#toc0">Overview</a>
+    <div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/close">close</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/defhandler">defhandler</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/get-connection">get-connection</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/get-ip">get-ip</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/open">open</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/send-down">send-down</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/send-up">send-up</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/start-tls">start-tls</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#saturnine.handler/write">write</a>
+    </div>
+    <br />
+  </div>
+</div>
+</div>
+                <div id="content-tag"><h1 id="overview">API for <span id="namespace-name">saturnine.handler</span></h1>
+by <span id="author">Unknown</span><br />
+<br />Usage:
+<pre>
+(ns your-namespace
+  (:require <span id="long-name">saturnine.handler</span>))
+</pre><pre>
+</pre><h2>Overview</h2>
+<pre id="namespace-docstr">Contains functions necessary to declare new Handlers, and a collection of
+useful functions which can be called from inside handlers (to either
+manipulate the state of the connection, or get information abotu the
+connection that called the Handler)</pre>
+<br />
+<h2>Public Variables and Functions</h2>
+<div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/close">close</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (close connection? fun?)
+</pre>
+  <pre id="var-docstr">Closes the connection and dispatches a disconnect message to the 
+handlers sequentially upstream.  Closes the thread-bound *connection* 
+if no connection argument is supplied, optionally calls fun 
+asynchronously when the channel is closed.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L41" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/defhandler">defhandler</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (defhandler name args doc? handlers)
+</pre>
+  <pre id="var-docstr">This macro allows the user to define Handlers for a server.  Each handler
+represents the intermediate state of a single connection, and is structured
+like a datatype that implements a single protocol (Handler), though each 
+function implementation is optional and will be substituted for the default 
+implementation if missing.  Each function defined should return the new state
+of the connection (returning nil leaves the state unmodified), and optionally 
+pass new messages to the other handlers in the pipeline (via send-up or 
+send-down, which are automatically called for default implementations).  The
+handle functions you can define are:
+
+  (connect [this] ...)        ; Called when a new connection is made; this 
+                                message is always sent upstream, no need to do so 
+                                yourself, even if you override the default.
+
+  (disconnect [this] ...)     ; Called when a connection is closed; always sent
+                                upstream.
+
+  (upstream [this msg] ...)   ; Called when a new message is dispatched upstream 
+                                from the previous Handler.  Defaults to send-up,
+                                but you must do this yourself if you implement this 
+                                function!
+
+  (downstream [this msg] ...) ; Called when a new message is dispatched downstream 
+                                from the next Handler.  Same as upstream, in reverse
+
+  (error [this msg] ...)      ; Called when an exception is thrown uncaught from 
+                                this handler.  Defaults to logging the exception.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L137" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/get-connection">get-connection</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (get-connection)
+</pre>
+  <pre id="var-docstr">Thread-bound connection</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L31" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/get-ip">get-ip</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (get-ip)
+</pre>
+  <pre id="var-docstr">Thread-bound ip address</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L36" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/open">open</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (open client fun? host port)
+</pre>
+  <pre id="var-docstr">Open a new Connection to a remote host and port; returns the new Connection.  
+Optionally takes a callback function that runs asynchronously on successful
+completion.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L73" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/send-down">send-down</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (send-down msg)
+</pre>
+  <pre id="var-docstr">Sends a message downstream to the previous handler in the stack.  Requires a 
+thread-bound *connection*</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L99" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/send-up">send-up</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (send-up msg)
+</pre>
+  <pre id="var-docstr">Sends a message upstream to the next handler in the stack.  Requires a 
+thread-bound *connection*</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L92" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/start-tls">start-tls</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (start-tls connection? fun?)
+</pre>
+  <pre id="var-docstr">Convert the connection to SSL in STARTTLS mode (ignoring the first message if
+this is a server stack).  Requires a :starttls handler in the server or 
+client's definition.  Optionally takes an explicit connection and/or a 
+callback function which is called asynchronously when this operation is 
+completed.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L107" id="var-source">Source</a>
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler/write">write</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (write connection? fun? message)
+</pre>
+  <pre id="var-docstr">Write a message to the connection, dispatching :downstream function on the
+stack's handlers (last to first).  Optionally takes an explicit 
+connection, and a callback function that runs asynchronously when the
+write is completed successfully.</pre>
+  <a href="http://www.github.com/texodus/saturnine/tree/dc25c6efcf97ba90db2b5adef212d52ea1fe90dd/src/saturnine/handler.clj#L57" id="var-source">Source</a>
+</div>
+
+
+</div>
+              </div>
+            </div>
+          </div>
+	</div>
+	<div id="foot">
+	  <div style="text-align: center;" id="copyright">(c) 2009, Andrew Stein</div>
+	</div>
+      </div>
+      <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />
+      Clojure auto-documentation system by Tom Faulhaber.</div>
+    </div>
+    <!-- /AllContentContainer -->
+  </body>
+
+</html>

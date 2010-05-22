@@ -1,15 +1,4 @@
-(ns saturnine.internal.xml 
-  "A custom, nonblocking, pull XML parser in pure clojure.  Don't get too 
-   excited, though;  it comes with a few caveats:
-
-     - Does no validation; completely ignores schemas
-     - May choke on some characters
-     - May choke on some formations of whitespace, newlines, tabs ...
-     - Uglier than sin
-     - Slow, to boot!
-
-   The good news is:  if you want to process streaming xml in Clojure without
-   blocking, you have no choice!  saturnine.xml is the only game in town."
+(ns saturnine.core.internal.xml 
   (:gen-class))
 
 
@@ -20,35 +9,23 @@
 ;;;; Util
 
 (defn- push
-  [#^::XML element]
+  [element]
   {:state    element
    :messages [(into {} element)]}) 
 
-;; (defn emit [e]
-;;   (if (instance? String e)
-;;     e
-;;     (str "<" 
-;;          (name (:tag e))
-;;          (when (:attrs e)
-;;            (apply str (for [attr (:attrs e)] 
-;; 			(str " " (name (key attr)) "='" (val attr)"'"))))
-;;          (if (:content e)
-;;            (str ">"
-;;                 (apply str (for [c (:content e)] (emit c)))
-;;                 (str "</" (name (:tag e)) ">"))
-;;            "/>"))))
-
 (defn emit [e]
-  (if (instance? String e)
+  (if (string? e)
     e
-    (str (if (not (= (:tag e) :characters)) "<" "")
-	 (if (= (:tag e) :end-element) "/" "")
+    (str (when (not (= (:tag e) :characters)) "<")
+	 (when (= (:tag e) :end-element) "/")
 	 (:qname e)
 	 (when (:attrs e)
 	   (apply str (for [attr (:attrs e)]
 			(str " " (name (key attr)) "='" (val attr)"'"))))
-	 (if (not (= (:tag e) :characters)) ">" "")
+	 (when (not (= (:tag e) :characters)) ">")
 	 "\r\n")))
+
+
 
 
 
@@ -56,13 +33,7 @@
 ;;;;
 ;;;; Character Parser
 
-;(deftype XML [state tag qname attrs] clojure.lang.IPersistentMap)
-
-(defmulti #^{:doc
-  "Parses a single character and returns a map with two entries:  :state 
-   is the intermediate assemlby of the next element in the Stream, and :messages
-   is a vector of any completed XML elements"}             
-  parse (fn [element #^Char x] (:state element)))
+(defmulti parse (fn [element #^Char x] (:state element)))
 
 (defmethod parse nil                                          ; don't know the current state
   [element c]

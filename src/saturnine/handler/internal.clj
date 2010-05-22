@@ -22,7 +22,8 @@
 	    [clojure.contrib.json.read :as jsonr]
 	    [clojure.contrib.json.write :as jsonw]
             [clojure.contrib.logging :as logging])
-  (:use [clojure.contrib.logging :only [log]]))
+  (:use [clojure.contrib.logging :only [log]]
+	[clojure.contrib.str-utils :only [str-join]]))
 
 
 
@@ -85,23 +86,23 @@
 
 (defmacro wrap
   [ctx event f]
-  `(binding [*connection* (new ~'saturnine.handler.internal.Connection ~ctx (.getChannel ~event))
+  `(binding [*connection* (new Connection ~ctx (.getChannel ~event))
 	     log          log-ip]
-      (let [~'ip (.getRemoteAddress (:channel *connection*))]
-        ~f)))
+     (let [~'ip (.getRemoteAddress (:channel *connection*))]
+       ~f)))
 
 (defn listen 
   ([#^ChannelFuture fut fun]
      (.addListener fut 
 		   (reify ChannelFutureListener
-			  (operationComplete [this future]
+			  (operationComplete [_ future]
 			    (if (.isSuccess future)
 			      (fun)
 			      (throw (Exception. "Operation failed")))))))
   ([#^ChannelFuture fut fun fail-fun]
      (.addListener fut 
 		   (reify ChannelFutureListener
-			  (operationComplete [this future]
+			  (operationComplete [_ future]
 			    (if (.isSuccess future)
 			      (fun)
 			      (fail-fun)))))))
@@ -112,12 +113,11 @@
 
 (defn messageReceived
   [ctx event handlers]
-   (wrap ctx event 
+  (wrap ctx event 
         (let [new-state (upstream (@handlers ip) (. event getMessage))]
-           (if (not (nil? new-state))
+	  (if (not (nil? new-state))
             (dosync (alter handlers assoc ip new-state))))))
 
-; TODO This function blocks on write if connection is unopened
 (defn writeRequested
   [ctx event handlers]
   (wrap ctx event 
@@ -147,6 +147,7 @@
               (if new-state (dosync (alter handlers assoc ip new-state)))))))
 
 (defn get-channel-handler
+  ; Create a ChannelHandler implementation from a defhandler
   [#^::Handler master] 
   (let [handlers (ref {})]
     (proxy [SimpleChannelHandler] []
@@ -157,12 +158,22 @@
       (exceptionCaught     [ctx event] (exception ctx event handlers)))))
 
 (defn new-upstream
+  ; Create a new instance of an UpstreamMessageEvent
   [channel msg]
   (UpstreamMessageEvent. channel msg (.getRemoteAddress channel)))
 
 (defn new-downstream
+  ; Create a new isntance of a DownstreamMessageEvent
   [channel msg] 
   (DownstreamMessageEvent. channel 
 			   (Channels/succeededFuture channel)
 			   msg 
 			   (.getRemoteAddress channel)))
+
+(defn log-error
+  ; Log an Exception properly
+  [message]
+  (log :error (str (:message message) 
+		   "\n            "
+		   (str-join "\n            " 
+			     (:stackTrace message)))))

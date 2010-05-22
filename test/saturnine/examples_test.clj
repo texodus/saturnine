@@ -4,38 +4,16 @@
 	   [clojure.lang LineNumberingPushbackReader])
   (:use [clojure.test]
         [saturnine.examples]
-        [saturnine]
-	[saturnine.handler]))
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;
-;;;; Test Utils
-
-(defn new-sock [port] 
-  (doto (Socket. "localhost" port) (.setSoTimeout 10000)))
-
-(defn new-read [sock]
-  (let [in (new BufferedReader 
-		(new InputStreamReader 
-		     (.getInputStream sock)))]
-    (fn [] (.readLine in))))
-
-(defn new-write [sock]
-  (let [out (new BufferedWriter 
-		 (new OutputStreamWriter 
-		      (.getOutputStream sock)))]
-    (fn [msg] (do (.write out (str msg) 0 (count (str msg)))
-		  (.newLine out)
-		  (.flush out)))))
+        [saturnine.core]
+	[saturnine.internal-test]
+        [clojure.contrib.logging :only [log]]))
 
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;
-;;;; Tests
+;;;; Test REPL
 
 (deftest test-repl-juggling
   (let [server   (start-repl-server)
@@ -47,7 +25,7 @@
 	read-2   (new-read socket-2)]
     (write-2 '(+ 1 2 3))
     (is (= "=> 6" (read-2)))
-    (write-2 '(println "Parse Error Test"))
+    (write-2 '(log :info "Cause a side"))
     (is (= "=> nil" (read-2)))
     (write-1 '(def x (atom [1 2 3 4 5 6 7 8 9 0])))
     (is (= "=> #'clojure.core/x" (read-1)))
@@ -67,6 +45,14 @@
     (.close socket-2)
     (stop-server server)))
 
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;; Test Sum
+
 (deftest test-sum-server
   (let [server  (start-sum-server)
 	socket (new-sock 1234)
@@ -78,6 +64,13 @@
     (is (= "Sum is 10" (read)))
     (.close socket)
     (stop-server server)))
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;; Test Chat
 
 (deftest test-chat-server
   (let [server   (start-chat-server)
@@ -96,47 +89,4 @@
     (is (= "User disconnected!" (apply str (take-last 18 (read-2)))))
     (.close socket-2)
     (stop-server server)))
-
-(deftest test-json-server
-  (let [server (start-server 1111 :string :print :json :echo)
-	socket (new-sock 1111)
-	write  (new-write socket)
-	read   (new-read socket)]
-    (write "{\"hello\" : \"test\"}")
-    (is (= "{\"hello\":\"test\"}" (read)))
-    (.close socket)
-    (stop-server server)))
-
-(deftest test-xml-server
-  (let [server (start-server 1111 :string :print :xml :echo)
-	socket (new-sock 1111)
-	write  (new-write socket)
-	read   (new-read socket)]
-    (write "<test>HELLO</test>")
-    (is (= "<test>" (read)))
-    (is (= "HELLO" (read)))
-    (is (= "</test>" (read)))
-    (.close socket)
-    (stop-server server)))
-
-(defhandler client-handler [a]
-  (upstream [this msg] (condp = msg 
-                         "=> "   (if (= @a nil) (write "(+ 1 2 3)"))
-                         "6\r\n=> " (swap! a (fn [_] :success))
-                         (swap! a (fn [_] :failure)))))
-
-(deftest test-client
-  (let [lock   (atom nil)
-	server (start-repl-server)
-	client (start-client :blocking :string (new client-handler lock))
-	chan   (open client "localhost" 2222)]
-    (loop [result @lock]      ; Have to make the test block here until the async handler gets a result
-      (do (Thread/sleep 100)
-	  (condp = result 
-	    :success (is true)
-	    :failure (is false)
-	    (recur @lock))))
-    (close chan)
-    (stop-server server)
-    (stop-client client)))
 

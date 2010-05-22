@@ -1,5 +1,5 @@
 (ns saturnine.handler
-  "Contains functions necessary to declare new Handlers, and a colleciton of
+  "Contains functions necessary to declare new Handlers, and a collection of
    useful functions which can be called from inside handlers (to either
    manipulate the state of the connection, or get information abotu the
    connection that called the Handler)"
@@ -17,6 +17,7 @@
 	   [org.jboss.netty.handler.ssl SslHandler])
   (:require [clojure.contrib.logging :as logging])
   (:use [clojure.contrib.logging :only [log]]
+        [clojure.contrib.str-utils :only [str-join]]
         [saturnine.handler.internal]))
 
 
@@ -34,7 +35,7 @@
 
 (defn get-ip
   "Thread-bound ip address"
-  [] {:pre [*connection*]} 
+  [] {:pre [(:channel *connection*)]} 
   (.getRemoteAddress (:channel *connection*)))
 
 (defn close
@@ -110,14 +111,13 @@
          callback function which is called asynchronously when this operation is 
          completed."
    :arglists '([connection? fun?])}
-  ([] {:pre [*connection* (.get (-> *connection* :context .getPipeline) "ssl")]}
-     (start-tls *connection*))
+  ([] (start-tls *connection* #(do nil)))
   ([conn-or-fun]
      (if (= (type conn-or-fun)
 	    saturnine.handler.internal.Connection)
        (start-tls conn-or-fun #(do nil))
        (start-tls *connection* conn-or-fun)))
-  ([connection fun] {:pre [connection]}
+  ([connection fun] {:pre [connection (.get (-> connection :context .getPipeline) "ssl")]}
      (let [{context :context channel :channel} connection
 	   handler (.get (.getPipeline context) "ssl")]
        (log :debug (str "Starting SSL Handshake for " (.getRemoteAddress channel)))
@@ -132,7 +132,9 @@
 ;;;;
 ;;;; Handler Definition Macros
 
-(defmacro defhandler 
+; TODO doc strings don't actual do anything, since under 1.2 records are classes
+;      and thus cannot have metadata!
+(defmacro defhandler {:doc 
    "This macro allows the user to define Handlers for a server.  Each handler
     represents the intermediate state of a single connection, and is structured
     like a datatype that implements a single protocol (Handler), though each 
@@ -143,28 +145,34 @@
     send-down, which are automatically called for default implementations).  The
     handle functions you can define are:
 
-      (connect [] ...)       ; Called when a new connection is made; this 
-                               message is always sent upstream, no need to do so 
-                               yourself, even if you override the default.
-      (disconnect [] ...)    ; Called when a connection is closed; always sent
-                               upstream.
-      (upstream [msg] ...)   ; Called when a new message is dispatched upstream 
-                               from the previous Handler.  Defaults to send-up,
-                               but you must do this yourself if you implement this 
-                               function!
-      (downstream [msg] ...) ; Called when a new message is dispatched downstream 
-                               from the next Handler.  Same as upstream, in reverse
-      (error [msg] ...)      ; Called when an exception is thrown uncaught from 
-                               this handler.  Defaults to logging the exception."
-  [name args & handles]
-  (let [syms (into #{} (map first handles))
+      (connect [this] ...)        ; Called when a new connection is made; this 
+                                    message is always sent upstream, no need to do so 
+                                    yourself, even if you override the default.
+
+      (disconnect [this] ...)     ; Called when a connection is closed; always sent
+                                    upstream.
+
+      (upstream [this msg] ...)   ; Called when a new message is dispatched upstream 
+                                    from the previous Handler.  Defaults to send-up,
+                                    but you must do this yourself if you implement this 
+                                    function!
+
+      (downstream [this msg] ...) ; Called when a new message is dispatched downstream 
+                                    from the next Handler.  Same as upstream, in reverse
+
+      (error [this msg] ...)      ; Called when an exception is thrown uncaught from 
+                                    this handler.  Defaults to logging the exception."
+   :arglists '([name args doc? handlers])}
+  [name args doc-or-handle & handles]
+  (let [[doc handles] (if (string? doc-or-handle) 
+			[doc-or-handle handles]
+			["" (cons doc-or-handle handles)])
+	syms (into #{} (map first handles))
 	defaults ['(connect [this] this) 
 		  '(disconnect [this] nil) 
 		  '(upstream [this msg] (saturnine.handler/send-up msg)) 
 		  '(downstream [this msg] (saturnine.handler/send-down msg))
-                  '(error [this msg] (do (clojure.contrib.logging/log :error msg)
-                                    (doseq [el (:stacktrace msg)]
-                                      (clojure.contrib.logging/log :error el))))]]
+                  '(error [this msg] (saturnine.handler.internal/log-error msg))]]
     `(defrecord ~name ~args
        Handler ~@handles
                ~@(filter identity 

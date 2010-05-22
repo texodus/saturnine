@@ -34,7 +34,7 @@ namespace.
     <a class="wiki_link" href="api-index.html">API Index</a><br />
     <a class="wiki_link" href="#">Namespaces:</a>
     <ul id="left-sidebar-list">
-      <li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
+      <li><a href="saturnine.core-api.html" class="wiki_link">saturnine.core</a></li><li><a href="saturnine.examples-api.html" class="wiki_link">saturnine.examples</a></li><li><a href="saturnine.handler-api.html" class="wiki_link">saturnine.handler</a></li>
     </ul>
   </div>
 </div>
@@ -46,7 +46,15 @@ namespace.
                 <div id="right-sidebar"><div id="toc">
   <h1 class="nopad">Table of Contents</h1>
   <div style="margin-left: 1em;" class="toc-section">
-    <a href="#saturnine">saturnine</a>
+    <a href="#saturnine.core">saturnine.core</a>
+    
+    <br />
+  </div><div style="margin-left: 1em;" class="toc-section">
+    <a href="#saturnine.examples">saturnine.examples</a>
+    
+    <br />
+  </div><div style="margin-left: 1em;" class="toc-section">
+    <a href="#saturnine.handler">saturnine.handler</a>
     
     <br />
   </div>
@@ -62,38 +70,47 @@ namespace.
 <div id="namespace-entry">
   <br />
   <hr />
-  <h2 id="saturnine">saturnine</h2>
+  <h2 id="saturnine.core">saturnine.core</h2>
   by <span id="author">unknown author</span><br />
-  <a href="saturnine-api.html" id="api-link">Detailed API documentation</a><br />
-  <pre id="namespace-docstr">This namespace is the public API for Saturnine;  it contains everything
-necessary to build server applications.  This should be the only namespace
-you need to import into your project</pre>
+  <a href="saturnine.core-api.html" id="api-link">Detailed API documentation</a><br />
+  <pre id="namespace-docstr">This namespace contains functions for starting and stopping server and
+client instances</pre>
   
   Public variables and functions:
-  <span id="var-link"><a href="saturnine-api.html#saturnine/close" id="var-tag">close</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/conn" id="var-tag">conn</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defclient" id="var-tag">defclient</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defhandler" id="var-tag">defhandler</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/defserver" id="var-tag">defserver</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/ip" id="var-tag">ip</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/open" id="var-tag">open</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-down" id="var-tag">send-down</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/send-up" id="var-tag">send-up</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/start-tls" id="var-tag">start-tls</a> </span><span id="var-link"><a href="saturnine-api.html#saturnine/write" id="var-tag">write</a> </span><br />
+  <span id="var-link"><a href="saturnine.core-api.html#saturnine.core/start-client" id="var-tag">start-client</a> </span><span id="var-link"><a href="saturnine.core-api.html#saturnine.core/start-server" id="var-tag">start-server</a> </span><span id="var-link"><a href="saturnine.core-api.html#saturnine.core/stop-client" id="var-tag">stop-client</a> </span><span id="var-link"><a href="saturnine.core-api.html#saturnine.core/stop-server" id="var-tag">stop-server</a> </span><br />
   <span id="subspace"><br />Variables and functions in
-    <span id="name">saturnine.sample</span>:
+    <span id="name">saturnine.core.internal</span>:
     <span id="sub-var-link">
-      <a href="saturnine-api.html#saturnine.sample/Chat">Chat</a>
-    </span><span id="sub-var-link">
-      <a href="saturnine-api.html#saturnine.sample/Sum">Sum</a>
-    </span><span id="sub-var-link">
-      <a href="saturnine-api.html#saturnine.sample/chat-server">chat-server</a>
-    </span><span id="sub-var-link">
-      <a href="saturnine-api.html#saturnine.sample/repl-server">repl-server</a>
-    </span><span id="sub-var-link">
-      <a href="saturnine-api.html#saturnine.sample/sum-server">sum-server</a>
-    </span><span id="sub-var-link">
-      <a href="saturnine-api.html#saturnine.sample/write-all">write-all</a>
-    </span>
-    <br />
-  </span><span id="subspace"><br />Variables and functions in
-    <span id="name">saturnine.xml</span>:
-    <span id="sub-var-link">
-      <a href="saturnine-api.html#saturnine.xml/parse">parse</a>
+      <a href="saturnine.core-api.html#saturnine.core.internal/print-helper">print-helper</a>
     </span>
     <br />
   </span>
+</div><div id="namespace-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.examples">saturnine.examples</h2>
+  by <span id="author">unknown author</span><br />
+  <a href="saturnine.examples-api.html" id="api-link">Detailed API documentation</a><br />
+  <pre id="namespace-docstr">Contains a few sample implementations to illustrate usage of the Saturnine 
+library</pre>
+  
+  Public variables and functions:
+  <span id="var-link"><a href="saturnine.examples-api.html#saturnine.examples/start-sum-server" id="var-tag">start-sum-server</a> </span><br />
+  
+</div><div id="namespace-entry">
+  <br />
+  <hr />
+  <h2 id="saturnine.handler">saturnine.handler</h2>
+  by <span id="author">unknown author</span><br />
+  <a href="saturnine.handler-api.html" id="api-link">Detailed API documentation</a><br />
+  <pre id="namespace-docstr">Contains functions necessary to declare new Handlers, and a collection of
+useful functions which can be called from inside handlers (to either
+manipulate the state of the connection, or get information abotu the
+connection that called the Handler)</pre>
+  
+  Public variables and functions:
+  <span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/close" id="var-tag">close</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/defhandler" id="var-tag">defhandler</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/get-connection" id="var-tag">get-connection</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/get-ip" id="var-tag">get-ip</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/open" id="var-tag">open</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/send-down" id="var-tag">send-down</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/send-up" id="var-tag">send-up</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/start-tls" id="var-tag">start-tls</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/write" id="var-tag">write</a> </span><br />
+  
 </div>
 </div>
               </div>

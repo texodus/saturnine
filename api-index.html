@@ -34,7 +34,7 @@ namespace.
     <a class="wiki_link" href="api-index.html">API Index</a><br />
     <a class="wiki_link" href="#">Namespaces:</a>
     <ul id="left-sidebar-list">
-      <li><a href="saturnine-api.html" class="wiki_link">saturnine</a></li>
+      <li><a href="saturnine.core-api.html" class="wiki_link">saturnine.core</a></li><li><a href="saturnine.examples-api.html" class="wiki_link">saturnine.examples</a></li><li><a href="saturnine.handler-api.html" class="wiki_link">saturnine.handler</a></li>
     </ul>
   </div>
 </div>
@@ -81,15 +81,12 @@ Shortcuts:<br />
 </div><div id="index-body">
   <h2 id="C"><span id="section-head">C</span></h2>
   <pre>
-<span id="section-content"> <a href="saturnine-api.html#saturnine/close">close</a><span id="line-content">                        function      saturnine          Closes the connection and dispatches a disconnect ...
-</span></span><span id="section-content"> <a href="saturnine-api.html#saturnine/conn">conn</a><span id="line-content">                         function      saturnine          Thread-bound connection.
+<span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/close">close</a><span id="line-content">                        function      saturnine.handler  Closes the connection and dispatches a disconnect ...
 </span></span></pre>
 </div><div id="index-body">
   <h2 id="D"><span id="section-head">D</span></h2>
   <pre>
-<span id="section-content"> <a href="saturnine-api.html#saturnine/defclient">defclient</a><span id="line-content">                    macro         saturnine          This macro allows the user to define a client inst...
-</span></span><span id="section-content"> <a href="saturnine-api.html#saturnine/defhandler">defhandler</a><span id="line-content">                   macro         saturnine          This macro allows the user to define Handlers for ...
-</span></span><span id="section-content"> <a href="saturnine-api.html#saturnine/defserver">defserver</a><span id="line-content">                    macro         saturnine          This macro allows the user to define a server inst...
+<span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/defhandler">defhandler</a><span id="line-content">                   macro         saturnine.handler  This macro allows the user to define Handlers for ...
 </span></span></pre>
 </div><div id="index-body">
   <h2 id="E"><span id="section-head">E</span></h2>
@@ -102,7 +99,9 @@ Shortcuts:<br />
 </div><div id="index-body">
   <h2 id="G"><span id="section-head">G</span></h2>
   <pre>
-</pre>
+<span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/get-connection">get-connection</a><span id="line-content">               function      saturnine.handler  Thread-bound connection.
+</span></span><span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/get-ip">get-ip</a><span id="line-content">                       function      saturnine.handler  Thread-bound ip address.
+</span></span></pre>
 </div><div id="index-body">
   <h2 id="H"><span id="section-head">H</span></h2>
   <pre>
@@ -110,8 +109,7 @@ Shortcuts:<br />
 </div><div id="index-body">
   <h2 id="I"><span id="section-head">I</span></h2>
   <pre>
-<span id="section-content"> <a href="saturnine-api.html#saturnine/ip">ip</a><span id="line-content">                           function      saturnine          Thread-bound ip address.
-</span></span></pre>
+</pre>
 </div><div id="index-body">
   <h2 id="J"><span id="section-head">J</span></h2>
   <pre>
@@ -135,7 +133,7 @@ Shortcuts:<br />
 </div><div id="index-body">
   <h2 id="O"><span id="section-head">O</span></h2>
   <pre>
-<span id="section-content"> <a href="saturnine-api.html#saturnine/open">open</a><span id="line-content">                         function      saturnine          Open a new Connection to a remote host and port; r...
+<span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/open">open</a><span id="line-content">                         function      saturnine.handler  Open a new Connection to a remote host and port; r...
 </span></span></pre>
 </div><div id="index-body">
   <h2 id="P"><span id="section-head">P</span></h2>
@@ -152,9 +150,14 @@ Shortcuts:<br />
 </div><div id="index-body">
   <h2 id="S"><span id="section-head">S</span></h2>
   <pre>
-<span id="section-content"> <a href="saturnine-api.html#saturnine/send-down">send-down</a><span id="line-content">                    function      saturnine          Sends a message downstream to the previous handler...
-</span></span><span id="section-content"> <a href="saturnine-api.html#saturnine/send-up">send-up</a><span id="line-content">                      function      saturnine          Sends a message upstream to the next handler in th...
-</span></span><span id="section-content"> <a href="saturnine-api.html#saturnine/start-tls">start-tls</a><span id="line-content">                    function      saturnine          Convert the connection to SSL in STARTTLS mode (ig...
+<span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/send-down">send-down</a><span id="line-content">                    function      saturnine.handler  Sends a message downstream to the previous handler...
+</span></span><span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/send-up">send-up</a><span id="line-content">                      function      saturnine.handler  Sends a message upstream to the next handler in th...
+</span></span><span id="section-content"> <a href="saturnine.core-api.html#saturnine.core/start-client">start-client</a><span id="line-content">                 function      saturnine.core     Allows the user to define &amp; start a client instanc...
+</span></span><span id="section-content"> <a href="saturnine.core-api.html#saturnine.core/start-server">start-server</a><span id="line-content">                 function      saturnine.core     Allows the user to define &amp; start a server instanc...
+</span></span><span id="section-content"> <a href="saturnine.examples-api.html#saturnine.examples/start-sum-server">start-sum-server</a><span id="line-content">             function      saturnine.examples Sum is a simple server that reads a stream of newl...
+</span></span><span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/start-tls">start-tls</a><span id="line-content">                    function      saturnine.handler  Convert the connection to SSL in STARTTLS mode (ig...
+</span></span><span id="section-content"> <a href="saturnine.core-api.html#saturnine.core/stop-client">stop-client</a><span id="line-content">                  function      saturnine.core     Deallocates a client stack's resources.
+</span></span><span id="section-content"> <a href="saturnine.core-api.html#saturnine.core/stop-server">stop-server</a><span id="line-content">                  function      saturnine.core     Stops a Server instance, severs all spawned connec...
 </span></span></pre>
 </div><div id="index-body">
   <h2 id="T"><span id="section-head">T</span></h2>
@@ -171,7 +174,7 @@ Shortcuts:<br />
 </div><div id="index-body">
   <h2 id="W"><span id="section-head">W</span></h2>
   <pre>
-<span id="section-content"> <a href="saturnine-api.html#saturnine/write">write</a><span id="line-content">                        function      saturnine          Write a message to the connection, dispatching dow...
+<span id="section-content"> <a href="saturnine.handler-api.html#saturnine.handler/write">write</a><span id="line-content">                        function      saturnine.handler  Write a message to the connection, dispatching :do...
 </span></span></pre>
 </div><div id="index-body">
   <h2 id="X"><span id="section-head">X</span></h2>

@@ -93,7 +93,7 @@ this server, incoming data is processed in the following manner:
     |--> :nonblocking --> :string --> :print --> :clj --|
     |                                                   v
  
-  network                                             :echo
+    network                                             :echo
 
     ^                                                   |
     |--  :nonblocking <-- :string <-- :print <-- :clj <--

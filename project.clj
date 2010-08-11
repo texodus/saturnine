@@ -5,8 +5,8 @@
    a number of features from this framework, including trivial configuration in
    blocking or non-blocking modes and SSL/TLS support (with starttls)."
   :repositories [["JBoss" "http://repository.jboss.org/maven2"]]
-  :dependencies [[org.clojure/clojure         "1.2.0-master-SNAPSHOT"]
-                 [org.clojure/clojure-contrib "1.2.0-master-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure         "1.2.0-beta1"]
+                 [org.clojure/clojure-contrib "1.2.0-beta1"]
                  [org.jboss.netty/netty       "3.2.0.BETA1"]
                  [log4j/log4j                 "1.2.14"]]
   :dev-dependencies [[leiningen/lein-swank "1.1.0"]

@@ -1,15 +1,15 @@
 (ns saturnine.core.internal
   ; Internal namespace for core; also defines built in handlers
-  (:gen-class) 
+  (:gen-class)
   (:import [java.util.concurrent Executors]
            [org.jboss.netty.bootstrap ServerBootstrap ClientBootstrap]
 	   [org.jboss.netty.handler.stream ChunkedWriteHandler]
 	   [org.jboss.netty.handler.codec.frame DelimiterBasedFrameDecoder Delimiters]
-	   [org.jboss.netty.handler.codec.http DefaultHttpResponse HttpResponseStatus 
+	   [org.jboss.netty.handler.codec.http DefaultHttpResponse HttpResponseStatus
 	    HttpVersion HttpRequestDecoder HttpRequestEncoder HttpChunkAggregator]
            [org.jboss.netty.logging InternalLoggerFactory Log4JLoggerFactory JdkLoggerFactory CommonsLoggerFactory]
-           [org.jboss.netty.channel Channels Channel ChannelPipeline SimpleChannelHandler ChannelFutureListener 
-	    ChannelHandlerContext ChannelStateEvent ChildChannelStateEvent ExceptionEvent UpstreamMessageEvent 
+           [org.jboss.netty.channel Channels Channel ChannelPipeline SimpleChannelHandler ChannelFutureListener
+	    ChannelHandlerContext ChannelStateEvent ChildChannelStateEvent ExceptionEvent UpstreamMessageEvent
 	    DownstreamMessageEvent MessageEvent ChannelFuture]
            [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory NioClientSocketChannelFactory]
            [org.jboss.netty.channel.socket.oio OioServerSocketChannelFactory OioClientSocketChannelFactory]
@@ -51,7 +51,7 @@
 ;;;; Stateless Handlers
 
 ;; TODO Stateless handlers should probably be semantically different from
-;;      stateful ones, such that developers can choose to opt out of the state 
+;;      stateful ones, such that developers can choose to opt out of the state
 ;;      preserving overhead
 
 (defhandler Echo []
@@ -83,9 +83,9 @@
   (disconnect [_]     (print-helper title "Disconnected!"))
   (upstream   [_ msg] (print-helper title msg " --> " send-up))
   (downstream [_ msg] (print-helper title msg " <-- " send-down))
-  (error      [_ msg] (log :error 
+  (error      [_ msg] (log :error
                            (str (:message msg) "\n            "
-                                (str-join "\n            " 
+                                (str-join "\n            "
                                           (:stackTrace msg))))))
 
 (defhandler Prompt [prompt]
@@ -119,7 +119,7 @@
 
 (defhandler XML [state tag qname attrs]
   "Parse a (possibly incomplete) list of characters into a list of XML Elements"
-  (upstream [this msg] (loop [tokens (rest msg) 
+  (upstream [this msg] (loop [tokens (rest msg)
 			      {next-state :state messages :messages} (xml/parse this (first msg))]
 			 (doseq [msg messages] (send-up msg))
 			 (if (not (empty? tokens))
@@ -136,7 +136,7 @@
 			   state))
   (downstream [_ msg]    (doseq [message (stanza/emit msg)] (send-down message))))
 
-			   
+
 
 
 
@@ -147,7 +147,7 @@
 ;;;;
 ;;;; Startup
 
-(InternalLoggerFactory/setDefaultFactory 
+(InternalLoggerFactory/setDefaultFactory
  (condp = logging/*impl-name*
    "org.apache.log4j"           (Log4JLoggerFactory.)
    "java.util.logging"          (JdkLoggerFactory.)
@@ -190,8 +190,8 @@
 
 (defn empty-server
   [blocking]
-  (new ServerBootstrap 
-       (if blocking 
+  (new ServerBootstrap
+       (if blocking
 	 (new OioServerSocketChannelFactory (Executors/newCachedThreadPool) (Executors/newCachedThreadPool))
 	 (new NioServerSocketChannelFactory (Executors/newCachedThreadPool) (Executors/newCachedThreadPool)))))
 

@@ -11,18 +11,18 @@
 ;;;;
 ;;;; Test Utils
 
-(defn new-sock [port] 
+(defn new-sock [port]
   (doto (Socket. "localhost" port) (.setSoTimeout 10000)))
 
 (defn new-read [sock]
-  (let [in (new BufferedReader 
-		(new InputStreamReader 
+  (let [in (new BufferedReader
+		(new InputStreamReader
 		     (.getInputStream sock)))]
     (fn [] (.readLine in))))
 
 (defn new-write [sock]
-  (let [out (new BufferedWriter 
-		 (new OutputStreamWriter 
+  (let [out (new BufferedWriter
+		 (new OutputStreamWriter
 		      (.getOutputStream sock)))]
     (fn [msg] (do (.write out (str msg) 0 (count (str msg)))
 		  (.newLine out)

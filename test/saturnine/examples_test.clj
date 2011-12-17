@@ -29,10 +29,10 @@
     (is (= "=> nil" (read-2)))
     (write-1 '(def x (atom [1 2 3 4 5 6 7 8 9 0])))
     (is (= "=> #'clojure.core/x" (read-1)))
-    (write-1 '(defn shuffle [a] 
-		(let [b (rand-int 10) 
-		      c (rand-int 10) 
-		      cc (a b)] 
+    (write-1 '(defn shuffle [a]
+		(let [b (rand-int 10)
+		      c (rand-int 10)
+		      cc (a b)]
 		  (assoc a b (a c) c cc))))
     (is (= "=> #'clojure.core/shuffle" (read-1)))
     (write-1 '(dotimes [_ 10000] (repeatedly (swap! x shuffle))))

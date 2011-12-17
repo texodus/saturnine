@@ -10,11 +10,11 @@
 ;;;;
 ;;;; Common
 
-(defn- push-content 
+(defn- push-content
   [element c]
   (assoc element :content (conj (or (:content element) []) c)))
 
-(defn- push-chars 
+(defn- push-chars
   [stanza]
   (when (and (= (:state stanza) :chars)
              (some (complement #(. Character (isWhitespace %))) (str (:sb stanza))))
@@ -29,8 +29,8 @@
 	(concat [{:tag :start-element, :qname tag, :attrs (:attrs element)}]
 		(apply concat (map emit (:content element)))
 		[{:tag :end-element, :qname tag}])))))
-       
-      
+
+
 
 
 
@@ -47,11 +47,11 @@
            :attrs   (into {} (map #(vector (keyword (first %)) (second %)) (:attrs el)))
            :content []}]
     (if (= (:tag e) :stream:stream)
-      (if (= 0 (:depth stanza)) 
+      (if (= 0 (:depth stanza))
 	{:state stanza :messages [e]} ; this is a stream, pass and don't acc
 	(throw (new Exception "Bad stream format")))
       (do (push-chars stanza)
-	  {:state (assoc stanza 
+	  {:state (assoc stanza
 		    :depth   (inc (:depth stanza))
 		    :stack   (conj (:stack stanza) (:current stanza))
 		    :current e
@@ -81,7 +81,7 @@
   [stanza el]
   (do  (let [#^StringBuilder sb (:sb stanza)]
 	(. sb (append (:qname el)))
-	{:state (assoc stanza 
+	{:state (assoc stanza
 		  :sb (when-not (= (:state stanza) :chars)
 			(new StringBuilder)
 			(:sb stanza))

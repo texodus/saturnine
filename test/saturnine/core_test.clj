@@ -15,7 +15,7 @@
 ;;;; Test Client
 
 (defhandler client-handler [a]
-  (upstream [this msg] (condp = msg 
+  (upstream [this msg] (condp = msg
                          "=> "      (condp = @a
 				      nil      (write "(+ 1 2 3)")
 				      :partial (swap! a (fn [_] :success)))
@@ -32,7 +32,7 @@
     (loop [result @lock
 	   count  0]      ; Have to make the test block here until the async handler gets a result
       (do (Thread/sleep 100)
-	  (cond 
+	  (cond
 	    (= :success result) (is true)
 	    (= :failure result) (is false)
 	    (> count 5)         (is false)

@@ -15,15 +15,13 @@
            [org.jboss.netty.channel.socket.oio OioServerSocketChannelFactory OioClientSocketChannelFactory]
            [org.jboss.netty.handler.codec.string StringEncoder StringDecoder]
 	   [org.jboss.netty.handler.ssl SslHandler])
-  (:require [clojure.contrib.str-utils2 :as string]
-	    [clojure.contrib.json.read :as jsonr]
-	    [clojure.contrib.json.write :as jsonw]
+  (:require [clojure.string :as string]
+            [clojure.data.json :as json]
 	    [saturnine.core.internal.xml :as xml]
 	    [saturnine.core.internal.stanza :as stanza]
-            [clojure.contrib.logging :as logging])
-  (:use [clojure.contrib.logging :only [log]]
+            [clojure.tools.logging :as logging])
+  (:use [clojure.tools.logging :only [info error]]
 	[saturnine.handler]
-	[clojure.contrib.str-utils :only [str-join]]
 	[saturnine.handler.internal :only [get-channel-handler get-ssl-handler get-ssl-context]]))
 
 
@@ -60,9 +58,9 @@
 
 (defhandler JSON []
   "Converts upstream JSON text to Clojure Maps and vice versa.  Utilizes
-   clojure.contrib.json"
-  (downstream [_ msg] (send-down (str (jsonw/json-str msg) "\r\n")))
-  (upstream   [_ msg] (send-up (jsonr/read-json msg))))
+   clojure.data.json"
+  (downstream [_ msg] (send-down (str (json/write-str msg) "\r\n")))
+  (upstream   [_ msg] (send-up (json/read-str msg))))
 
 (defn print-helper
   "Helper fun for Print handler - factors out duplicate code"
@@ -73,8 +71,8 @@
   ([title msg sep fun]
        (if (string? msg)
          (doseq [line (string/split-lines msg)]
-           (log :info (str title (get-ip) sep line)))
-         (log :info (str title (get-ip) sep msg)))
+           (info (str title (get-ip) sep line)))
+         (info (str title (get-ip) sep msg)))
        (fun msg)))
 
 (defhandler Print [title]
@@ -83,10 +81,10 @@
   (disconnect [_]     (print-helper title "Disconnected!"))
   (upstream   [_ msg] (print-helper title msg " --> " send-up))
   (downstream [_ msg] (print-helper title msg " <-- " send-down))
-  (error      [_ msg] (log :error 
+  (error      [_ msg] (error 
                            (str (:message msg) "\n            "
-                                (str-join "\n            " 
-                                          (:stackTrace msg))))))
+                                (apply str (interpose  "\n            " 
+                                                       (:stackTrace msg)))))))
 
 (defhandler Prompt [prompt]
   "Adds a prompt to each downstream message"
@@ -147,11 +145,11 @@
 ;;;;
 ;;;; Startup
 
-(InternalLoggerFactory/setDefaultFactory 
- (condp = logging/*impl-name*
-   "org.apache.log4j"           (Log4JLoggerFactory.)
-   "java.util.logging"          (JdkLoggerFactory.)
-   "org.apache.commons.logging" (CommonsLoggerFactory.)))
+(comment (InternalLoggerFactory/setDefaultFactory 
+           (condp = logging/*impl-name*
+             "org.apache.log4j"           (Log4JLoggerFactory.)
+             "java.util.logging"          (JdkLoggerFactory.)
+             "org.apache.commons.logging" (CommonsLoggerFactory.))))
 
 (defn start-helper
   [bootstrap & handlers]

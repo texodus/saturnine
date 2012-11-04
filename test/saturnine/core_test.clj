@@ -5,7 +5,7 @@
   (:use [clojure.test]
         [saturnine.core]
 	[saturnine.handler]
-        [clojure.contrib.logging :only [log]]))
+        [clojure.tools.logging :only [error]]))
 
 
 
@@ -21,7 +21,7 @@
 				      :partial (swap! a (fn [_] :success)))
 			 "6\r\n"    (if (= @a nil) (swap! a (fn [_] :partial)))
                          "6\r\n=> " (swap! a (fn [_] :success))
-                         (do (log :error (str ":" msg ":"))
+                         (do (error (str ":" msg ":"))
                              (swap! a (fn [_] :failure))))))
 
 (deftest test-client

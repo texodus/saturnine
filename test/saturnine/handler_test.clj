@@ -5,8 +5,7 @@
   (:use [clojure.test]
         [saturnine.core]
 	[saturnine.handler]
-	[saturnine.internal-test]
-        [clojure.contrib.logging :only [log]]))
+	[saturnine.internal-test]))
 
 
 

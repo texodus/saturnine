@@ -1,4 +1,5 @@
-(ns saturnine.core.internal.xml 
+(ns saturnine.core.internal.xml
+  
   (:gen-class))
 
 
@@ -33,7 +34,7 @@
 ;;;;
 ;;;; Character Parser
 
-(defmulti parse (fn [element #^Char x] (:state element)))
+(defmulti parse (fn [element #^Character x] (:state element)))
 
 (defmethod parse nil                                          ; don't know the current state
   [element c]

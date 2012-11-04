@@ -18,12 +18,7 @@
            [org.jboss.netty.channel.socket.oio OioServerSocketChannelFactory OioClientSocketChannelFactory]
            [org.jboss.netty.handler.codec.string StringEncoder StringDecoder]
 	   [org.jboss.netty.handler.ssl SslHandler])
-  (:require [clojure.contrib.str-utils2 :as string]
-	    [clojure.contrib.json.read :as jsonr]
-	    [clojure.contrib.json.write :as jsonw]
-            [clojure.contrib.logging :as logging])
-  (:use [clojure.contrib.logging :only [log]]
-	[clojure.contrib.str-utils :only [str-join]]))
+  (:require [clojure.tools.logging :as log]))
 
 
 
@@ -82,12 +77,11 @@
 ;;;;
 ;;;; Netty Internal
 
-(def *connection* nil)
+(def ^:dynamic *connection* nil)
 
 (defmacro wrap
   [ctx event f]
-  `(binding [*connection* (new Connection ~ctx (.getChannel ~event))
-	     log          log-ip]
+  `(binding [*connection* (new Connection ~ctx (.getChannel ~event))]
      (let [~'ip (.getRemoteAddress (:channel *connection*))]
        ~f)))
 
@@ -109,7 +103,7 @@
 
 (defn log-ip
   [& args]
-  (log (first args) (str (.getRemoteAddress (:channel *connection*)) ":" (apply str (rest args)))))
+  (log/info (first args) (str (.getRemoteAddress (:channel *connection*)) ":" (apply str (rest args)))))
 
 (defn messageReceived
   [ctx event handlers]
@@ -143,7 +137,7 @@
 (defn exception
   [ctx event handlers]
   (wrap ctx event 
-        (do (let [new-state (error (@handlers ip) (bean (.getCause event)))]
+        (do (let [new-state (log/error (@handlers ip) (bean (.getCause event)))]
               (if new-state (dosync (alter handlers assoc ip new-state)))))))
 
 (defn get-channel-handler
@@ -172,8 +166,10 @@
 
 (defn log-error
   ; Log an Exception properly
+  ; replaced str-join with source from clojure.contrib.str-utils by
+  ; stuart sierra
   [message]
-  (log :error (str (:message message) 
+  (log/error (str (:message message) 
 		   "\n            "
-		   (str-join "\n            " 
-			     (:stackTrace message)))))
+		   (apply str (interpose "\n            " 
+                                         (:stackTrace message))))))

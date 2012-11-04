@@ -4,10 +4,10 @@
    in a message-passing style.  It is built on top of JBoss Netty, and inherits 
    a number of features from this framework, including trivial configuration in
    blocking or non-blocking modes and SSL/TLS support (with starttls)."
-  :repositories [["JBoss" "http://repository.jboss.org/maven2"]]
-  :dependencies [[org.clojure/clojure         "1.2.0-beta1"]
-                 [org.clojure/clojure-contrib "1.2.0-beta1"]
-                 [org.jboss.netty/netty       "3.2.0.BETA1"]
+  :dependencies [[org.clojure/clojure         "1.4.0"]
+                 [org.clojure/tools.logging   "0.2.3"]
+                 [org.clojure/data.json       "0.2.0"]
+                 [org.jboss.netty/netty       "3.2.7.Final"]
                  [log4j/log4j                 "1.2.14"]]
   :dev-dependencies [[leiningen/lein-swank "1.1.0"]
                      [autodoc              "0.7.0"]

@@ -1,8 +1,7 @@
 (ns saturnine.internal-test
   (:import [java.net Socket]
 	   [java.io InputStreamReader OutputStreamWriter BufferedReader BufferedWriter]
-	   [clojure.lang LineNumberingPushbackReader])
-  (:use [clojure.contrib.logging :only [log]]))
+	   [clojure.lang LineNumberingPushbackReader]))
 
 
 

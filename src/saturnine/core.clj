@@ -13,9 +13,7 @@
            [org.jboss.netty.handler.codec.string StringEncoder StringDecoder]
            [org.jboss.netty.logging InternalLoggerFactory Log4JLoggerFactory JdkLoggerFactory CommonsLoggerFactory]
 	   [org.jboss.netty.handler.ssl SslHandler])
-  (:require [clojure.contrib.logging :as logging])
-  (:use [clojure.contrib.logging :only [log]]
-        [saturnine.core.internal]
+  (:use [saturnine.core.internal]
 	[saturnine.handler]
 	[saturnine.handler.internal]))
 

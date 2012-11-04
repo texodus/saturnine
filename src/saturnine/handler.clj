@@ -15,9 +15,7 @@
            [org.jboss.netty.handler.codec.string StringEncoder StringDecoder]
            [org.jboss.netty.logging InternalLoggerFactory Log4JLoggerFactory JdkLoggerFactory CommonsLoggerFactory]
 	   [org.jboss.netty.handler.ssl SslHandler])
-  (:require [clojure.contrib.logging :as logging])
-  (:use [clojure.contrib.logging :only [log]]
-        [clojure.contrib.str-utils :only [str-join]]
+  (:use [clojure.tools.logging :only [debug]]
         [saturnine.handler.internal]))
 
 
@@ -120,7 +118,7 @@
   ([connection fun] {:pre [connection (.get (-> connection :context .getPipeline) "ssl")]}
      (let [{context :context channel :channel} connection
 	   handler (.get (.getPipeline context) "ssl")]
-       (log :debug (str "Starting SSL Handshake for " (.getRemoteAddress channel)))
+       (debug (str "Starting SSL Handshake for " (.getRemoteAddress channel)))
        (listen (.handshake handler channel) fun))))
 
 

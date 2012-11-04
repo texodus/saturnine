@@ -6,7 +6,7 @@
         [saturnine.examples]
         [saturnine.core]
 	[saturnine.internal-test]
-        [clojure.contrib.logging :only [log]]))
+        [clojure.tools.logging :only [info]]))
 
 
 
@@ -25,7 +25,7 @@
 	read-2   (new-read socket-2)]
     (write-2 '(+ 1 2 3))
     (is (= "=> 6" (read-2)))
-    (write-2 '(log :info "Cause a side"))
+    (write-2 '(info "Cause a side"))
     (is (= "=> nil" (read-2)))
     (write-1 '(def x (atom [1 2 3 4 5 6 7 8 9 0])))
     (is (= "=> #'clojure.core/x" (read-1)))

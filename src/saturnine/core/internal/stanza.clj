@@ -1,6 +1,6 @@
 (ns saturnine.core.internal.stanza
   (:gen-class)
-  (:use [clojure.contrib.logging :only [log]]))
+  (:use [clojure.tools.logging :only [warn]]))
 
 
 
@@ -60,7 +60,7 @@
 (defmethod parse :end-element
   [stanza el]
   (condp = (:depth stanza)
-    0 (log :warn "Stream closed unexpectedly!") ; TODO throw an exception here?
+    0 (warn "Stream closed unexpectedly!") ; TODO throw an exception here?
     1 (let [result [((:content (push-content (peek (:stack stanza)) (:current stanza))) 0)]]
 	(push-chars stanza)
 	{:state (assoc stanza

@@ -1,130 +1,246 @@
+<!DOCTYPE html>
 <html>
   <head>
-    <title>Saturnine - Overview</title>
-    <link href="static/favicon.png" rel="icon" />
-    <link href="static/favicon.png" rel="shortcut icon" />
-    <link media="all" type="text/css" href="static/clojure.css" rel="stylesheet" />
-    <link media="all" type="text/css" href="static/wiki.css" rel="stylesheet" />
-    <link media="all" type="text/css" href="static/internal.css" rel="stylesheet" />
-    <!-- TODO: are we using these (from clojure.org)? If so, add the files -->
-    <script src="file/view/code_highlighter.js" type="text/javascript"></script>
-    <script src="file/view/clojure.js" type="text/javascript"></script>
-    <style>.menuWrapper{height: 36px;}</style>
-    <!--[if lte IE 6]>
-    <link rel="stylesheet" href="http://www.wikispaces.com/_/2009051601/s/internal_ie.css" type="text/css" />
-    <![endif]-->
-  </head>
-<!--
-This document was auto-generated from the source by the clojure autodoc system.
-To report errors or ask questions about the overall documentation structure, formatting,
-etc., contact Tom Faulhaber (google mail name: tomfaulhaber).
-For errors in the documentation of a particular namespace, contact the author of that
-namespace.
--->
-  <body>
-    <div id="AllContentContainer">
-      <div id="Header">
-	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
-	<h1><a title="page header title" id="page-header" href="index.html">API Documentation</a></h1>
-      </div>
-      <div id="leftcolumn"><div style="text-align: center;"></div>
-<div class="menu">
-  <div class="WikiCustomNav WikiElement wiki">
-    <a class="wiki_link" href="index.html">Overview</a><br />
-    <a class="wiki_link" href="api-index.html">API Index</a><br />
-    <a class="wiki_link" href="#">Namespaces:</a>
-    <ul id="left-sidebar-list">
-      <li><a href="saturnine.core-api.html" class="wiki_link">saturnine.core</a></li><li><a href="saturnine.examples-api.html" class="wiki_link">saturnine.examples</a></li><li><a href="saturnine.handler-api.html" class="wiki_link">saturnine.handler</a></li>
-    </ul>
-  </div>
-</div>
-</div>
-      <div id="rightcolumn">
-	<div id="Content">
-	  <div class="contentBox"><div class="innerContentBox">
-              <div id="content_view" class="wiki wikiPage">
-                <div id="right-sidebar"><div id="toc">
-  <h1 class="nopad">Table of Contents</h1>
-  <div style="margin-left: 1em;" class="toc-section">
-    <a href="#saturnine.core">saturnine.core</a>
-    
-    <br />
-  </div><div style="margin-left: 1em;" class="toc-section">
-    <a href="#saturnine.examples">saturnine.examples</a>
-    
-    <br />
-  </div><div style="margin-left: 1em;" class="toc-section">
-    <a href="#saturnine.handler">saturnine.handler</a>
-    
-    <br />
-  </div>
-</div>
-</div>
-                <div id="content-tag"><h1 id="toc0">An Overview of the <span id="header-project">Saturnine</span> API</h1>
-<br />
-<div id="project-description">Saturnine is a Clojure library to assist in developing server applications
-   in a message-passing style.  It is built on top of JBoss Netty, and inherits 
-   a number of features from this framework, including trivial configuration in
-   blocking or non-blocking modes and SSL/TLS support (with starttls).</div>
-<br />
-<div id="namespace-entry">
-  <br />
-  <hr />
-  <h2 id="saturnine.core">saturnine.core</h2>
-  by <span id="author">unknown author</span><br />
-  <a href="saturnine.core-api.html" id="api-link">Detailed API documentation</a><br />
-  <pre id="namespace-docstr">This namespace contains functions for starting and stopping server and
-client instances</pre>
-  
-  Public variables and functions:
-  <span id="var-link"><a href="saturnine.core-api.html#saturnine.core/start-client" id="var-tag">start-client</a> </span><span id="var-link"><a href="saturnine.core-api.html#saturnine.core/start-server" id="var-tag">start-server</a> </span><span id="var-link"><a href="saturnine.core-api.html#saturnine.core/stop-client" id="var-tag">stop-client</a> </span><span id="var-link"><a href="saturnine.core-api.html#saturnine.core/stop-server" id="var-tag">stop-server</a> </span><br />
-  <span id="subspace"><br />Variables and functions in
-    <span id="name">saturnine.core.internal</span>:
-    <span id="sub-var-link">
-      <a href="saturnine.core-api.html#saturnine.core.internal/print-helper">print-helper</a>
-    </span>
-    <br />
-  </span>
-</div><div id="namespace-entry">
-  <br />
-  <hr />
-  <h2 id="saturnine.examples">saturnine.examples</h2>
-  by <span id="author">unknown author</span><br />
-  <a href="saturnine.examples-api.html" id="api-link">Detailed API documentation</a><br />
-  <pre id="namespace-docstr">Contains a few sample implementations to illustrate usage of the Saturnine 
-library</pre>
-  
-  Public variables and functions:
-  <span id="var-link"><a href="saturnine.examples-api.html#saturnine.examples/start-sum-server" id="var-tag">start-sum-server</a> </span><br />
-  
-</div><div id="namespace-entry">
-  <br />
-  <hr />
-  <h2 id="saturnine.handler">saturnine.handler</h2>
-  by <span id="author">unknown author</span><br />
-  <a href="saturnine.handler-api.html" id="api-link">Detailed API documentation</a><br />
-  <pre id="namespace-docstr">Contains functions necessary to declare new Handlers, and a collection of
-useful functions which can be called from inside handlers (to either
-manipulate the state of the connection, or get information abotu the
-connection that called the Handler)</pre>
-  
-  Public variables and functions:
-  <span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/close" id="var-tag">close</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/defhandler" id="var-tag">defhandler</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/get-connection" id="var-tag">get-connection</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/get-ip" id="var-tag">get-ip</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/open" id="var-tag">open</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/send-down" id="var-tag">send-down</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/send-up" id="var-tag">send-up</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/start-tls" id="var-tag">start-tls</a> </span><span id="var-link"><a href="saturnine.handler-api.html#saturnine.handler/write" id="var-tag">write</a> </span><br />
-  
-</div>
-</div>
-              </div>
-            </div>
-          </div>
-	</div>
-	<div id="foot">
-	  <div style="text-align: center;" id="copyright">(c) 2009, Andrew Stein</div>
-	</div>
-      </div>
-      <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />
-      Clojure auto-documentation system by Tom Faulhaber.</div>
-    </div>
-    <!-- /AllContentContainer -->
-  </body>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
 
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Saturnine by texodus</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Saturnine</h1>
+        <h2>Asynchronous server application framework for Clojure, based on JBoss Netty</h2>
+        <a href="https://github.com/texodus/saturnine" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="saturnine" class="anchor" href="#saturnine"><span class="octicon octicon-link"></span></a>Saturnine</h1>
+
+<p>Simple Asynchronous Network Application Library</p>
+
+<h3>
+<a name="overview" class="anchor" href="#overview"><span class="octicon octicon-link"></span></a>Overview</h3>
+
+<p>Saturnine is a Clojure library designed to facilitate rapid development of 
+asynchronous network applications.  It is built on top of JBoss Netty, and 
+inherits a number of features from this framework, but is designed with 
+simplicity in mind:</p>
+
+<ul>
+<li><p>Sane defaults preferred over explicit configuration.</p></li>
+<li><p>Common functionality built-in, including Handlers for Bytes, Strings,
+(simple, tagsoup style) streaming XML, JSON, HTTP, XMPP and Clojure forms</p></li>
+<li><p>Event driven design with easy session state management.  Applications can
+be trivially run in blocking ("thread-per-connection") or nonblocking modes,
+without modifying your application code.</p></li>
+<li><p>SSL/TLS support (with starttls), also supports nonblocking operation.</p></li>
+</ul><p>A full rundown of Saturnine's functionality can be found in the <a href="http://texodus.github.com/saturnine">API Documentation</a></p>
+
+<h3>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h3>
+
+<p>You'll need Git, Leiningen, Java, a computer of some sort, and a source of
+electricity.  Install Saturnine with:</p>
+
+<pre><code> git clone http://github.com/texodus/saturnine.git
+ cd saturnine
+ lein install
+</code></pre>
+
+<p>... or add it to your leiningen <code>project.clj</code> ...</p>
+
+<pre><code> :dependencies [[saturnine "0.3"]]
+</code></pre>
+
+<p>... or your maven pom.xml ...</p>
+
+<pre><code> &lt;repositories&gt;
+   &lt;repository&gt;
+     &lt;id&gt;clojars.org&lt;/id&gt;
+     &lt;url&gt;http://clojars.org/repo&lt;/url&gt;
+   &lt;/repository&gt;
+ &lt;/repositories&gt;
+
+ &lt;dependencies&gt;
+   &lt;dependency&gt;
+     &lt;groupId&gt;saturnine&lt;/groupId&gt;
+     &lt;artifactId&gt;saturnine&lt;/artifactId&gt;
+     &lt;version&gt;0.3&lt;/version&gt;
+   &lt;/dependency&gt;
+ &lt;/dependencies&gt;
+</code></pre>
+
+<p>... and add (:use 'saturnine.core) to your namespace declaration anywhere you want to
+use Saturnine.</p>
+
+<h3>
+<a name="tutorial" class="anchor" href="#tutorial"><span class="octicon octicon-link"></span></a>Tutorial</h3>
+
+<p>Saturnine is an asynchronous framework, which means simply that all operations 
+return nil immediately when invoked, and the result of an operation is passed
+to a supplied callback function whenever the operation is completed.  In this way, 
+you can design applications that continue to process, even after initiating costly
+IO operations.  And that's A Good Thing (c).</p>
+
+<p>Saturnine applications (servers ant clients) are composed of a list of sequential
+Handlers.  Each handler, in turn, is simply a clojure defrecord which implements 
+the Handler protocol.  The Handler defrecord itself represents the intermediate 
+state of the processed stream - when new data is received from a connection, saturnine 
+will call the relevent function from the Handler protocol on the first handler in the 
+list, which in turn calls the next handler and returns a new instance of itself that 
+represents the new state of the connection, and so on.  </p>
+
+<p>Data received from a conenction proceeds calls the first handler's upstream implementation</p>
+
+<ul>
+<li>this handler is responsible for calling (send-up ...) to pass data to the next 
+handler in the list (though if this function is not implemented for a Handler, the 
+default implementation will simply call send-up on the unprocessed data it received).<br>
+When data is written to a connection, the last handler's downstream function is called, 
+and utilizing (send-down ...) within this handler will pass processed data to the previous
+handler in the list, until it eventually propogates to the wire.</li>
+</ul><p>Saturnine provides a number of simple Handlers by default, which are represented
+in the handler lsit by keys.  For example, here is a simple REPL server implemented
+with only the built-in handlers:</p>
+
+<pre><code>(use 'saturnine.core)
+
+(start-server 1234 :nonblocking :string [:print "repl"] :clj :echo)
+</code></pre>
+
+<p>This starts a nonblocking server listening on port 1234.  Once a connection is opened to
+this server, incoming data is processed in the following manner:</p>
+
+<pre><code>|--&gt; :nonblocking --&gt; :string --&gt; :print --&gt; :clj --|
+|                                                   v
+
+network                                             :echo
+
+^                                                   |
+|--  :nonblocking &lt;-- :string &lt;-- :print &lt;-- :clj &lt;--
+</code></pre>
+
+<ol>
+<li><p>:string - Incoming data is converting to string data and flushed to the next 
+handler when a newline is encountered.</p></li>
+<li><p>:print - Incoming strings are logged via clojure.contrib.logging, then 
+flushed to the next handler.  Log lines qualified by "repl"</p></li>
+<li><p>:clj - Incoming strings are processed by the Clojure's read-string  and 
+eval'd, then the resulting forms are flushed to the next handler</p></li>
+<li><p>:echo - echo's every incoming Clojure form, back down the stack in reverse.</p></li>
+<li><p>:clj - the now-outbound Clojure form is flushed as a string with print-str</p></li>
+<li><p>:print - outbound strings are logged via clojure.contrib.logging, then 
+flushed</p></li>
+<li><p>:string - converts incoming Strings back into Bytes to send to the Connection</p></li>
+</ol><p>Eventually, you'll want to write your own handlers to process data - Saturnine provides
+the defhandler macro for this purpose.  Think of defhandler as a souped-up defrecord, 
+specifically for writing Handlers - functions from the Handler protocl that are not provided
+as arguments are replaced with default implementations that should do abotu what you'd
+expect.  For example, here's an application with a custom handler which only
+responds to "upstream" messages, usign the default implementations for other event
+types:</p>
+
+<pre><code>(use 'saturnine.core 'saturnine.handler)
+
+(defhandler Sum [sum]
+  (upstream [this msg] (let [new-sum (+ sum msg)]
+                         (send-down (str "Sum is " new-sum "\r\n"))
+                         (assoc this :sum new-sum))))
+
+(start-server 1234 :blocking :string :clj (new Sum 0))
+</code></pre>
+
+<p>Breaking this down piece by piece, Sum is a clojure datatype with a single property, :sum,
+and implements a single function, upstream.  By declaring sum-server to use the handler
+(Sum 0), we are telling Saturnine to assign new Connections this value.  When
+an upstream message is passed upstream from :clj, the upstream function on Sum is
+called;  this function dispatches a new downstream message with the send-down 
+function, then returns a new Sum, which becomes the new state of the connection,
+and will be called on all future messages from this connection that are flushed
+from :clj.</p>
+
+<p>Here's an entire telnet chat server, which uses a Clojure Ref as it's state, allowing
+indepedent connections to communicate with eachother simply and thread-safely:</p>
+
+<pre><code>(use 'saturnine.core 'saturnine.handler)
+
+(defn- write-all 
+  [users msg]
+  (doseq [user (vals (dissoc users (get-ip)))]
+    (write user (str (get-ip) " : " msg))))
+
+(defhandler Chat [users]
+  (connect    [_] (do (dosync (alter users assoc (get-ip) (get-connection)))
+                      (write-all @users "User connected!\r\n")))
+  (disconnect [_] (do (dosync (alter users dissoc (get-ip)))
+                      (write-all @users "User disconnected!\r\n")))
+  (upstream   [_ msg] (do (write-all @users msg))))
+
+(start-server 3333 :string [:print "chat"] (new Chat (ref {})))
+</code></pre>
+
+<p>For further examples, please see the <a href="http://texodus.github.com/saturnine">API Documentation</a> and 
+<a href="http://github.com/texodus/saturnine/tree/master/src/saturnine/examples.clj">'saturnine.examples</a> namespace.</p>
+
+<h3>
+<a name="planned-features-global-backlog" class="anchor" href="#planned-features-global-backlog"><span class="octicon octicon-link"></span></a>Planned Features (global backlog)</h3>
+
+<ul>
+<li>UDP support</li>
+<li>Filesystem support</li>
+<li>Sequential flow control combinators for simple "conversational" control flows 
+in a single handler. (maybe a special sequential handler?)</li>
+<li>XMPP enchancement, maybe some bosh?</li>
+<li>Comet-made-easy, websockets-made-easy</li>
+<li>Take the java out of SSL</li>
+<li>:pre checks for state type verification</li>
+<li>Optimization 
+
+<ul>
+<li>Implement stateless variation on handlers</li>
+<li>Replace SimpleChannelHandler with reified ChannelHandler</li>
+<li>Add support for zero-copy ChannelBuffer manipulation (including file serving)</li>
+</ul>
+</li>
+<li>Additional Handler optional message endpoints - bind, open, etc.</li>
+<li>Add callbacks to send-up/send-down that are actually useful</li>
+<li>Better HTTP support in the form of a ring adapter.</li>
+<li>Open to suggestions ....</li>
+</ul>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/texodus/saturnine/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/texodus/saturnine/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/texodus/saturnine"></a> is maintained by <a href="https://github.com/texodus">texodus</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
 </html>

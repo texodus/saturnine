@@ -121,7 +121,7 @@ this server, incoming data is processed in the following manner:
 Eventually, you'll want to write your own handlers to process data - Saturnine provides
 the defhandler macro for this purpose.  Think of defhandler as a souped-up defrecord, 
 specifically for writing Handlers - functions from the Handler protocl that are not provided
-as arguments are replaced with default implementations that should do abotu what you'd
+as arguments are replaced with default implementations that should do about what you'd
 expect.  For example, here's an application with a custom handler which only
 responds to "upstream" messages, usign the default implementations for other event
 types:
